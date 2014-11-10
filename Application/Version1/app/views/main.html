@@ -1,0 +1,15 @@
+<div style="width:100%;margin-right:0px">
+    <input type="text" ng-model="query">
+    <ul style="overflow: scroll; width: 250px; height: 500px; float:left">
+        <!-- orderBy has '' because name is an attribute of author -->
+        <li enter ng-repeat="author in authors | filter: query | orderBy: 'name' | limitTo: numList"> {{ author.name }}
+        </li>
+    </ul>
+
+    <button ng-click="debug()">Try</button>
+
+
+    <div>
+        {{ author.authorName }} has {{ author.count }} documents.
+    </div>
+</div>
