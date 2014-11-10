@@ -1,0 +1,12 @@
+{
+	"name": "node-api",
+	"version" : "0.0.1",
+	"main": "server.js",
+	"dependencies": {
+		"express": "~4.0.0",
+		"body-parser": "~1.0.1",
+		"request": "latest",
+		"cheerio" : "latest",
+		"scraper" : "latest",
+	}
+}
