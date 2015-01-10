@@ -35,7 +35,7 @@ angular.module('fypV2App').directive('barChart', [function () {
 			},1000)
 		}
 	};
-}])
+}]);
 
 angular.module('fypV2App').directive('pieChart', [function () {
 	return {
@@ -72,4 +72,4 @@ angular.module('fypV2App').directive('pieChart', [function () {
 			},1000);
 		}
 	};
-}])
+}]);

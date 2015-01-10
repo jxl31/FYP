@@ -1,0 +1,8 @@
+<div class="list1 col-md-2">
+    <input type="text" class="form-control" placeholder="Search Author Name" data-ng-show="authors" data-ng-model="query.name"/>
+    <ul class="list-group list1-items">
+        <button class="list-group-item btn btn-default btn-list-item" data-ng-repeat="author in authors | filter: query.name" ng-click="setAuthor(author)">
+            {{ author.name }}
+        </button>
+    </ul>
+</div>

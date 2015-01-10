@@ -1,0 +1,13 @@
+<div>
+	{{ author.authorName }}
+	<a href="#/">BACK</a>
+	<form>
+		<select id="vizSelect">
+			<option value="bar" selected> Bar </option>
+			<option value="pie"> Pie </option>
+		</select>
+	</form>
+
+</div>
+<bar-chart class="pl" ng-if="vizType == 'bar' "></bar-chart>
+<pie-chart class="pl" ng-if="vizType == 'pie' "></pie-chart>

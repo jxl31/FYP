@@ -1,0 +1,9 @@
+<div class="container nameSearchContainer">
+	<div id="authorList" data-ng-include="'includes/authorList.html'"></div>
+	<div class="col-md-8 diagram-container">
+		<div data-ng-if="!$.isEmptyObject(selectedAuthor)">
+			<div id="diagramPanel" data-ng-include="template.url"></div>
+		</div>
+			
+	</div>
+</div>
