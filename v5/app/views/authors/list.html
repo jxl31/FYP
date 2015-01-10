@@ -1,0 +1,8 @@
+<div>
+	<input type="text" class="form-control search-bar" placeholder="Search Author Name" data-ng-model="query.$"/>
+    <ul class="list-group authors-list">
+        <button class="list-group-item btn btn-default btn-list-item btn-author-list-item" data-ng-repeat="author in authors | filter: query" ng-click="clicked(author)">
+            {{ author.lname }}, {{ author.fname }}
+        </button>
+    </ul>
+</div>

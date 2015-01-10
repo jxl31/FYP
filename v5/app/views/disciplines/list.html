@@ -1,0 +1,20 @@
+<div>
+	<input type="text" class="form-control search-bar" placeholder="Search Discipline Name" data-ng-model="query.discipline"/>
+    <ul class="list-group discipline-list">
+    	<div class="list-group-item" data-ng-repeat="discipline in disciplines | filter: query | orderBy: 'discipline'" ng-if="discipline.subdisciplines.length > 0">
+    		<accordion>
+    			<accordion-group>
+    				<accordion-heading>
+    					{{discipline.discipline}} <i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': true, 'glyphicon-chevron-right': false}"></i>
+    				</accordion-heading>
+    			</accordion-group>
+    		</accordion>
+			<button class="btn btn-default btn-list-item btn-discipline-list-item" ng-click="setDiscipline(discipline)">
+        		{{discipline.discipline}}
+    		</button>
+    	</div>
+    </ul>
+</div>
+
+
+<!-- TODO: Make a directive to keep one accordion for each of the discipline that have subdisciplines -->
