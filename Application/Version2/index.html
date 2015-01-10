@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Version 0.0.1</title>
+<meta name="description" content="">
+<meta name="viewport" content="width=device-width">
+<link rel="stylesheet" href="styles/bootstrap.min.css" />
+<link rel="stylesheet" href="styles/main.css">
+    <body ng-app="fypV2App" ng-view>
+
+        <!-- 
+            Third library dependencies:
+                - angular:
+                    -route
+                - jquery
+                -json3
+                -boostrap
+                -d3
+        -->
+        <script src="vendor/angular.js"></script>
+        <script src="vendor/angular-route.js"></script>
+        <script src="vendor/jquery.js"></script>
+        <script src="vendor/json3.min.js"></script>
+        <script src="vendor/bootstrap.min.js"></script>
+        <script src="vendor/d3.min.js"></script>
+
+        <!-- 
+            Local Scripts
+        -->
+        <script src="scripts/app.js"></script>
+        <script src="scripts/controllers/main.js"></script>
+        <script src="scripts/directives/author/author.js"></script>
+        <script src="scripts/directives/author/visualisation.js"></script>
+        <script src="scripts/controllers/visualisation.js"></script>
+    </body>
+</html>
