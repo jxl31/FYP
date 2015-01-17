@@ -1,31 +1,31 @@
-var mongoose = require('mongoose');
-// // var j$ = require('jquery');
-// // var options = {
-// // 	server: { poolSize: 5 },
-// // 	replset: { rs_name: 'scraper_v1_replica' }
-// // };
-// // options.server.socketOptions = options.replset.socketOptions = { keepAlive: 1 };
-mongoose.connect('mongodb://localhost/scraper_v1');
+// var mongoose = require('mongoose');
+// // // var j$ = require('jquery');
+// // // var options = {
+// // // 	server: { poolSize: 5 },
+// // // 	replset: { rs_name: 'scraper_v1_replica' }
+// // // };
+// // // options.server.socketOptions = options.replset.socketOptions = { keepAlive: 1 };
+// mongoose.connect('mongodb://localhost/scraper_v1');
 
-var db = mongoose.connection;
-var Schema = mongoose.Schema;
-db.once('open', function (callback) {
-	var kittySchema = mongoose.Schema({
-		_id: Schema.Types.ObjectId,
-		name: String
-		},{
-			collection: 'Kittens'
-		});
+// var db = mongoose.connection;
+// var Schema = mongoose.Schema;
+// db.once('open', function (callback) {
+// 	var kittySchema = mongoose.Schema({
+// 		_id: Schema.Types.ObjectId,
+// 		name: String
+// 		},{
+// 			collection: 'Kittens'
+// 		});
 
-	var Kitten = mongoose.model('Kittens', kittySchema);
-	var query = Kitten.remove();
-	query.exec();
-// 	// var array = [];
-	var silence = new Kitten({_id: mongoose.Types.ObjectId(), name: 'silence'});
-	silence.save(function(err,data){
-		if(err) console.log(err);
-		console.log(data._id);
-	});
+// 	var Kitten = mongoose.model('Kittens', kittySchema);
+// 	var query = Kitten.remove();
+// 	query.exec();
+// // 	// var array = [];
+// 	var silence = new Kitten({_id: mongoose.Types.ObjectId(), name: 'silence'});
+// 	silence.save(function(err,data){
+// 		if(err) console.log(err);
+// 		console.log(data._id);
+// 	});
 // 	// array.push(silence);
 // 	// var bat = new Kitten({name: 'bat'});
 // 	// array.push(bat);
@@ -57,7 +57,7 @@ db.once('open', function (callback) {
 	// 	console.log(global);
 	// },550)
 
-});
+// });
 
 // function findMe(){
 // 	Kitten.find(function(err,data){
@@ -69,9 +69,18 @@ db.once('open', function (callback) {
 
 
 
+//self calling callbackexample
+// function increment(number, callback){
+// 	var i = number+1;
+// 	console.log(i);
+// 	callback(i,callback);
+// }
+
+// increment(1, increment);
+
+
 
 //callback example
-
 // function try1(obj, callback, another){
 // 	var total = obj.n+obj.m;
 // 	if(!another) console.log('third parameter is: ' + another);
@@ -80,7 +89,7 @@ db.once('open', function (callback) {
 
 // try1({n: 4, m:6},function(n){
 // 	console.log(n);
-// 	try1({n: 1, m: 2},print);
+// 	try1({n: 1, m: 2},try1);
 // })
 
 // function print(total){
@@ -132,3 +141,32 @@ db.once('open', function (callback) {
 // }, function(data){
 
 // })
+var express = require('express');
+var AlchemyAPI = require('alchemyapi');
+var alchemyapi = new AlchemyAPI();
+var app = express();
+var server = require('http').createServer(app);
+
+app.set('port', process.env.PORT || 3000);
+
+var demo_url = encodeURI('http://arrow.dit.ie/schfsehart/33/');
+var output = {};
+
+var port = process.env.PORT || 3000;
+server.listen(port, function(){
+	console.log('Express server listening on port ' + port);
+	console.log('To view the example, point your favorite browser to: localhost:3000'); 
+});
+
+function keywords(callback){
+	alchemyapi.keywords('url', demo_url, { 'sentiment':1 }, function(response) {
+		output['keywords'] = { url: demo_url, response:JSON.stringify(response,null,4), results:response['keywords'] };
+		callback(output);
+	});
+}
+
+app.get('/', function(req,res){
+	keywords(function(data){
+		res.send(data);
+	})
+});

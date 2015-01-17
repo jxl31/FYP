@@ -107,37 +107,15 @@ var Disciplines = mongoose.model('Disciplines', disciplineSchema);
 			});
 		});
 
+		//ROUTE: Get Author Details
 		router.route('/author/:fname/:lname/:key').get(function(req,res){
+			var resJSON;
+			var start = 0;
+			var skip = 25;
 			var sGeneralURL = 'http://arrow.dit.ie/do/search/results/json?start=0&facet=&facet=&facet=&facet=&facet=&facet=&q=author_lname%3A"lastname"%20AND%20author_fname%3A"firstname"&op_1=AND&field_1=text%3A&value_1=&start_date=&end_date=&context=authorKey&sort=date_desc&format=json&search=Search'
 			var sAuthorURI = sGeneralURL.replace('firstname', req.params.fname).replace('lastname', req.params.lname).replace('authorKey', req.params.key);
 			var selectedAuthor = req.params.fname + ' ' + req.params.lname;
-			console.log(encodeURI(sAuthorURI));
-			request({
-					uri: sAuthorURI,
-					method: 'GET',
-					type: 'application/json',
-				}, function(error, response, body){
-					//TODO put this into another function passing the body and returning new formatted body
-					var raw = JSON.parse(body);
-					var coauthorCount = [];
-					var docs = raw.docs;
-					docs.forEach(function(doc){
-						var authors = doc.author_display;
-						authors.forEach(function(author){
-							if(author.indexOf(selectedAuthor)){
-								if(coauthorCount.length == 0){
-									coauthorCount.push({name: author, count: 1})
-								} else{
-									incrementCount(author,coauthorCount);
-								}
-							}
-						})
-					})
-					raw.coauthors = coauthorCount;
-					raw.authorName = selectedAuthor;
-
-					res.json(raw);
-				});
+			getAuthorData(sAuthorURI, start, skip, res,selectedAuthor, getAuthorData, resJSON);
 		});
 	
 		//ROUTE: Get all disciplines
@@ -159,6 +137,67 @@ var Disciplines = mongoose.model('Disciplines', disciplineSchema);
 	});
 
 //}, 700);
+function getAuthorData(URL,start,skip, oResponse, selectedAuthor,callback,data){
+	var sStart = 'start=';
+	var startingPosition = URL.match('start=(\\d)');
+	var tempURI = URL.replace(startingPosition[0], sStart+start);
+	console.log(encodeURI(tempURI));
+	console.log('Start: ' + start);
+	request({
+			uri: tempURI,
+			method: 'GET',
+			type: 'application/json'
+		}, function(error, response, body){
+			//TODO put this into another function passing the body and returning new formatted body
+			var raw = JSON.parse(body);
+			if(start === 0){
+				if(raw.num_found > skip){
+					callback(URL, start+skip, skip, oResponse, selectedAuthor, callback,raw);
+				} else{
+					formatBody(raw, selectedAuthor, function(formattedData){
+						oResponse.json(formattedData);
+					});
+				}
+
+			} else {
+				raw.docs.forEach(function(doc){
+					data.docs.push(doc);
+				});
+				if(start+skip < raw.num_found){
+					console.log('More Doc to transfer');
+					callback(URL, start+skip, skip, oResponse, selectedAuthor, callback,data);
+				} else{
+					formatBody(data, selectedAuthor, function(formattedData){
+						oResponse.json(formattedData);	
+					});
+				}
+			}
+
+		});
+}
+
+function formatBody(raw, selectedAuthor, callback){
+	var temp = raw;
+	var coauthorCount = [];
+	var docs = temp.docs;
+	docs.forEach(function(doc,i){
+		var authors = doc.author_display;
+		console.log('Index ' + i + ': ' +authors);
+		authors.forEach(function(author){
+			if(author.indexOf(selectedAuthor)){
+				if(coauthorCount.length == 0){
+					coauthorCount.push({name: author, count: 1})
+				} else{
+					incrementCount(author,coauthorCount);
+				}
+			}
+		})
+	});
+
+	temp.coauthors = coauthorCount;
+	temp.authorName = selectedAuthor;
+	callback(temp);
+}
 
 function cleanLoadAuthors(model){
 	clean(model);
