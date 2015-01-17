@@ -46,7 +46,8 @@ var dbUpdateInterval = 1000 * 60 * 60 * 12; //12 hours
 var regex_key = '(context|ancestor_key)[=\\:](\\d+)',
 	regex_fname = 'author_fname.{3}%22(.*?)%22',
 	regex_lname = 'author_lname.{3}%22(.*?)%22',
-	regex_thesis = '[\\[\\(]Thesis[\\]\\)]';
+	regex_thesis = '[\\[\\(]Thesis[\\]\\)]',
+	regex_start = 'start=(\\d)';
 	//regex_num = '\\((\\d+)\\)';
 
 /*
@@ -59,12 +60,23 @@ var URL_ARROW = 'http://arrow.dit.ie',
 /*
 	Schema Creation
 */
+
+var authorDetailSchema = mongoose.Schema({
+	_id: String
+},{
+	strict: false,
+	collection: 'AuthorDetails'
+});
+
+
 var authorSchema = mongoose.Schema({
+	_id: String,
 	fname: String,
 	lname: String,
 	link: String,
 	key: Number,
-	count: Number
+	count: Number,
+	detail_id: String
 },{
 	collection: 'Authors'
 });
@@ -84,45 +96,52 @@ var disciplineSchema = mongoose.Schema({
 },{
 	collection: 'Disciplines'
 });
-
-var Authors = mongoose.model('Authors', authorSchema);
-var Disciplines = mongoose.model('Disciplines', disciplineSchema);
+/*
+	Models
+*/
+var Authors = mongoose.model('Authors', authorSchema),
+	Disciplines = mongoose.model('Disciplines', disciplineSchema),
+	AuthorDetails = mongoose.model('AuthorDetails', authorDetailSchema);
 
 //setTimeout(function(){
 	db.on('error', console.error);
 	db.once('open', function (callback) {
 		console.log('Connected to mongodb!');
 		setInterval(cleanLoadAuthors(Authors), dbUpdateInterval);
-		setInterval(cleanLoadDiscpline(Disciplines), dbUpdateInterval);
+		//setInterval(cleanLoadDiscpline(Disciplines), dbUpdateInterval);
 
 		router.use(function(req, res, next) {
 			next(); // make sure we go to the next routes and don't stop here
 		});
 
+		//ROUTE: Get all available authors in DIT
 		router.route('/authors').get(function(req,res){
-
 			Authors.find({},function (err, authors) {
 				if (err) return console.error(err);
-				return res.send(authors);
+				return res.json(authors);
 			});
 		});
 
 		//ROUTE: Get Author Details
 		router.route('/author/:fname/:lname/:key').get(function(req,res){
-			var resJSON;
-			var start = 0;
-			var skip = 25;
-			var sGeneralURL = 'http://arrow.dit.ie/do/search/results/json?start=0&facet=&facet=&facet=&facet=&facet=&facet=&q=author_lname%3A"lastname"%20AND%20author_fname%3A"firstname"&op_1=AND&field_1=text%3A&value_1=&start_date=&end_date=&context=authorKey&sort=date_desc&format=json&search=Search'
-			var sAuthorURI = sGeneralURL.replace('firstname', req.params.fname).replace('lastname', req.params.lname).replace('authorKey', req.params.key);
-			var selectedAuthor = req.params.fname + ' ' + req.params.lname;
-			getAuthorData(sAuthorURI, start, skip, res,selectedAuthor, getAuthorData, resJSON);
+			Authors.findOne({fname:req.params.fname, lname: req.params.lname}, function(err,primary){
+				if(err) res.json(err);
+				else if(primary.details !== undefined){
+					AuthorDetails.findOne({_id: primary.detail_id}, function(err,details){
+						res.json(details);
+					});
+				} else {
+					persistAndSendAuthorDetails(res, req.params.fname, req.params.lname, req.params.key);
+				}
+			});
+			//TODO: Get Keywords for every document that the author has.
 		});
 	
 		//ROUTE: Get all disciplines
 		router.route('/disciplines').get(function(req,res){
 			Disciplines.find({}, function(err, disciplines){
 				if(err) return console.error(err);
-				return res.send(disciplines); //TODO: parse into sub-documents
+				return res.json(disciplines); //TODO: parse into sub-documents
 			});
 		});
 
@@ -136,10 +155,30 @@ var Disciplines = mongoose.model('Disciplines', disciplineSchema);
 		});
 	});
 
+function persistAndSendAuthorDetails(res,fname,lname, key){
+	var resJSON;
+	var start = 0;
+	var skip = 25;
+	var sGeneralURL = 'http://arrow.dit.ie/do/search/results/json?start=0&facet=&facet=&facet=&facet=&facet=&facet=&q=author_lname%3A"lastname"%20AND%20author_fname%3A"firstname"&op_1=AND&field_1=text%3A&value_1=&start_date=&end_date=&context=authorKey&sort=date_desc&format=json&search=Search'
+	var sAuthorURI = sGeneralURL.replace('firstname', fname).replace('lastname', lname).replace('authorKey', key);
+	var selectedAuthor = fname + ' ' + lname;
+	getAuthorData(sAuthorURI, start, skip, selectedAuthor, getAuthorData, resJSON , function(data){
+		var details = {
+			_id: mongoose.Types.ObjectId(),
+			details: data
+		};
+		AuthorDetails.create(details);
+		Authors.findOne({fname:fname , lname:lname}, {_id: 1} , function(err,author){
+			Authors.update({_id: author._id}, { detail_id: details._id });
+		});
+		res.json(data);
+	});
+}
+
 //}, 700);
-function getAuthorData(URL,start,skip, oResponse, selectedAuthor,callback,data){
+function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCall){
 	var sStart = 'start=';
-	var startingPosition = URL.match('start=(\\d)');
+	var startingPosition = URL.match(regex_start);
 	var tempURI = URL.replace(startingPosition[0], sStart+start);
 	console.log(encodeURI(tempURI));
 	console.log('Start: ' + start);
@@ -148,14 +187,16 @@ function getAuthorData(URL,start,skip, oResponse, selectedAuthor,callback,data){
 			method: 'GET',
 			type: 'application/json'
 		}, function(error, response, body){
-			//TODO put this into another function passing the body and returning new formatted body
+			console.log(body);
 			var raw = JSON.parse(body);
 			if(start === 0){
 				if(raw.num_found > skip){
-					callback(URL, start+skip, skip, oResponse, selectedAuthor, callback,raw);
+					//callback called here
+					callback(URL, start+skip, skip, selectedAuthor, callback, raw, finalCall);
 				} else{
 					formatBody(raw, selectedAuthor, function(formattedData){
-						oResponse.json(formattedData);
+						//Saving the extracted JSON to a non-strict schema
+						finalCall(formattedData);
 					});
 				}
 
@@ -165,10 +206,10 @@ function getAuthorData(URL,start,skip, oResponse, selectedAuthor,callback,data){
 				});
 				if(start+skip < raw.num_found){
 					console.log('More Doc to transfer');
-					callback(URL, start+skip, skip, oResponse, selectedAuthor, callback,data);
+					callback(URL, start+skip, skip, selectedAuthor, callback, data, finalCall);
 				} else{
 					formatBody(data, selectedAuthor, function(formattedData){
-						oResponse.json(formattedData);	
+						finalCall(formattedData);
 					});
 				}
 			}
@@ -201,6 +242,7 @@ function formatBody(raw, selectedAuthor, callback){
 
 function cleanLoadAuthors(model){
 	clean(model);
+	clean(AuthorDetails);
 	console.log('Scraping Authors');
 	sjs.StaticScraper
 	.create(URL_AUTHORS)
@@ -224,10 +266,10 @@ function cleanLoadAuthors(model){
 							var sKey = sLink.match(regex_key);
 				 			if(sLabel.match(regex_thesis)){
 				 				//if(array[array.length - 1].fname !== sFirstName && array[array.length - 1].lname !== sLastName){
-				 				temp.push({ fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], thesis: true});
+				 				temp.push({ _id: mongoose.Types.ObjectId(),fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], thesis: true});
 				 				//}
 				 			} else{
-				 				temp.push({ fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], thesis: false});
+				 				temp.push({ _id: mongoose.Types.ObjectId(),fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], thesis: false});
 				 			}
 				 		}
 					})
