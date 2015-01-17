@@ -8,6 +8,7 @@ angular.module('myappApp')
   	});
 
   	$scope.disciplines = [];
+    $scope.seletedDiscipline;
 
   	$scope.init = function(){
   		var promise = DisciplineAPI.getDisciplines();
@@ -23,5 +24,13 @@ angular.module('myappApp')
   			console.log($scope.disciplines);
   		}
   	});
+
+    $scope.filterQuery = function(string){
+      $scope.searchQuery = string;
+    }
+
+    $scope.setDiscipline = function(oDiscipline){
+      $scope.selectedDiscipline = oDiscipline;
+    }
 
   });

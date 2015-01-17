@@ -1,5 +1,7 @@
 .authors-list,
-.discipline-list{
+.discipline-list,
+.author-box-container,
+.discipline-box-container{
 	height: 500px;
 	max-height: 500px;
     -webkit-transition: all 0.5s ease;

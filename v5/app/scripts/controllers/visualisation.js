@@ -1,3 +1,5 @@
+'use strict';
+
 angular.module('myappApp')
   .controller('MainVisCtrl', function ($scope, $routeParams, AuthorAPI) {
     $scope.awesomeThings = [
@@ -20,7 +22,7 @@ angular.module('myappApp')
       promiseA.then(function(data){
         $scope.author = data;
       });
-    }
+    };
 
     $scope.toggleDiagram = function(selected){
       $scope.selectedDiagram = selected;
