@@ -1,0 +1,33 @@
+.authors-list,
+.discipline-list,
+.author-box-container,
+.discipline-box-container{
+	height: 500px;
+	max-height: 500px;
+    -webkit-transition: all 0.5s ease;
+    -moz-transition: all 0.5s ease;
+    -o-transition: all 0.5s ease;
+    transition: all 0.5s ease;
+    overflow-y: auto;
+}
+
+.btn-author-list-item,
+.btn-discipline-list-item{
+	width: 100%;
+	border: 1px solid #286095;
+	white-space: normal;
+}
+
+.btn-author-list-item:hover,
+.btn-discipline-list-item:hover{
+	background-color: #286090;
+	color: #fff;
+}
+
+.btn-author-list-item:active,
+.btn-author-list-item:focus,
+.btn-discipline-list-item:active,
+.btn-discipline-list-item:focus{
+	background-color: #286090;
+	color: #fff;
+}
