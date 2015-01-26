@@ -8,8 +8,8 @@ angular.module('myappApp')
 				data: '=data'
 			},
 			link: function (scope, iElement, iAttrs) {
-				var margin = {top: 20, right: 50, bottom: 70, left: 60};
-				var width = 700 - margin.left - margin.right,
+				var margin = {top: 20, right: 60, bottom: 70, left: 60};
+				var width = $('.visualisation-panel').width(),
 	    			height = 450 - margin.top - margin.bottom;
 
 	    		var color = d3.scale.category10(),
