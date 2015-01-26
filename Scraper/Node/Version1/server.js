@@ -7,6 +7,7 @@ var mongoose = require('mongoose'); //plugin for nodejs to connect to a mongodb
 var j$ = require('jquery');
 var fs = require('fs'),
 	readline = require('readline');
+var AlchemyAPI = require('alchemyapi');
 
 /*
 	Set up Dictionary
@@ -37,6 +38,7 @@ var db = mongoose.connection;
 /*Routers*/
 var app = express(); //express app
 var router = express.Router(); //routers
+var alchemyAPI = new AlchemyAPI();
 
 var dbUpdateInterval = 1000 * 60 * 60 * 12; //12 hours
 
@@ -103,58 +105,61 @@ var Authors = mongoose.model('Authors', authorSchema),
 	Disciplines = mongoose.model('Disciplines', disciplineSchema),
 	AuthorDetails = mongoose.model('AuthorDetails', authorDetailSchema);
 
-//setTimeout(function(){
-	db.on('error', console.error);
-	db.once('open', function (callback) {
-		console.log('Connected to mongodb!');
-		setInterval(cleanLoadAuthors(Authors), dbUpdateInterval);
-		//setInterval(cleanLoadDiscpline(Disciplines), dbUpdateInterval);
+db.on('error', console.error);
+db.once('open', function (callback) {
+	console.log('Connected to mongodb!');
+	setInterval(cleanLoadAuthors(Authors), dbUpdateInterval);
+	setInterval(cleanLoadDiscpline(Disciplines), dbUpdateInterval);
 
-		router.use(function(req, res, next) {
-			next(); // make sure we go to the next routes and don't stop here
-		});
+	router.use(function(req, res, next) {
+		next(); // make sure we go to the next routes and don't stop here
+	});
 
-		//ROUTE: Get all available authors in DIT
-		router.route('/authors').get(function(req,res){
-			Authors.find({},function (err, authors) {
-				if (err) return console.error(err);
-				return res.json(authors);
-			});
-		});
-
-		//ROUTE: Get Author Details
-		router.route('/author/:fname/:lname/:key').get(function(req,res){
-			Authors.findOne({fname:req.params.fname, lname: req.params.lname}, function(err,primary){
-				if(err) res.json(err);
-				else if(primary.details !== undefined){
-					AuthorDetails.findOne({_id: primary.detail_id}, function(err,details){
-						res.json(details);
-					});
-				} else {
-					persistAndSendAuthorDetails(res, req.params.fname, req.params.lname, req.params.key);
-				}
-			});
-			//TODO: Get Keywords for every document that the author has.
-		});
-	
-		//ROUTE: Get all disciplines
-		router.route('/disciplines').get(function(req,res){
-			Disciplines.find({}, function(err, disciplines){
-				if(err) return console.error(err);
-				return res.json(disciplines); //TODO: parse into sub-documents
-			});
-		});
-
-		//ROUTE: Get a specific discipline
-		router.route('/disciplines/:discipline').get(function(req,res){
-			console.log(req.params.discipline);
-			Disciplines.find({discipline: req.params.discipline}, function(err,discipline){
-				if(err) return console.error(err);
-				return res.send(discipline);
-			});
+	//ROUTE: Get all available authors in DIT
+	router.route('/authors').get(function(req,res){
+		Authors.find({},function (err, authors) {
+			if (err) return console.error(err);
+			return res.json(authors);
 		});
 	});
 
+	//ROUTE: Get Author Details
+	router.route('/author/:fname/:lname/:key').get(function(req,res){
+		Authors.findOne({fname:req.params.fname, lname: req.params.lname}, function(err,primary){
+			if(err) res.json(err);
+			else if(primary.details !== undefined){
+				AuthorDetails.findOne({_id: primary.detail_id}, function(err,details){
+					res.json(details);
+				});
+			} else if(!primary){
+				res.json('Not in author list');	
+			} else {
+				persistAndSendAuthorDetails(res, req.params.fname, req.params.lname, req.params.key);
+			}
+		});
+		//TODO: Get Keywords for every document that the author has.
+	});
+
+	//ROUTE: Get all disciplines
+	router.route('/disciplines').get(function(req,res){
+		Disciplines.find({}, function(err, disciplines){
+			if(err) return console.error(err);
+			return res.json(disciplines); //TODO: parse into sub-documents
+		});
+	});
+
+	//ROUTE: Get a specific discipline
+	router.route('/disciplines/:discipline').get(function(req,res){
+		Disciplines.find({discipline: req.params.discipline}, function(err,discipline){
+			if(err) return console.error(err);
+			return res.send(discipline);
+		});
+	});
+});
+
+/**************************
+	START: Author
+**************************/
 function persistAndSendAuthorDetails(res,fname,lname, key){
 	var resJSON;
 	var start = 0;
@@ -174,20 +179,17 @@ function persistAndSendAuthorDetails(res,fname,lname, key){
 		res.json(data);
 	});
 }
-
-//}, 700);
 function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCall){
 	var sStart = 'start=';
 	var startingPosition = URL.match(regex_start);
 	var tempURI = URL.replace(startingPosition[0], sStart+start);
-	console.log(encodeURI(tempURI));
+	encodeURI(tempURI);
 	console.log('Start: ' + start);
 	request({
 			uri: tempURI,
 			method: 'GET',
 			type: 'application/json'
 		}, function(error, response, body){
-			console.log(body);
 			var raw = JSON.parse(body);
 			if(start === 0){
 				if(raw.num_found > skip){
@@ -196,7 +198,9 @@ function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCa
 				} else{
 					formatBody(raw, selectedAuthor, function(formattedData){
 						//Saving the extracted JSON to a non-strict schema
-						finalCall(formattedData);
+						extractKeywordDocs(formattedData, function(finalData){
+							finalCall(finalData);
+						});
 					});
 				}
 
@@ -215,6 +219,27 @@ function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCa
 			}
 
 		});
+}
+
+function extractKeywordDocs(data, callback){
+	var temp  = [];
+	data.docs.forEach(function(doc){
+		extractKeywords(doc.url, function(results){
+			temp.push({docTitle: doc.title, docKeywords: results});
+			if(temp.length === data.docs.length){
+				data['keywords'] = temp;
+				callback(data) //finalcallback;
+			}
+		});
+	});
+}
+
+function extractKeywords(url, callback){
+	var output;
+	alchemyAPI.keywords('url', url, { 'sentiment':0 }, function(response) {
+		output = response['keywords'];
+		callback(output); //anonymous function in extractKeywords()
+	});
 }
 
 function formatBody(raw, selectedAuthor, callback){
@@ -303,6 +328,14 @@ function cleanLoadAuthors(model){
 			return;
 		});
 }
+
+/**************************
+	END: Author
+**************************/
+
+/**************************
+	START: Discipline
+**************************/
 
 var disciplines = [];
 
@@ -418,6 +451,10 @@ function scrapeAuthorsDiscipline(discipline, callback){
 		callback(discipline.discipline, data)
 	});
 }
+
+/**************************
+	END: Discipline
+**************************/
 
 function incrementCount(author,array){
 	for(var i = 0; i < array.length; i++){

@@ -1,47 +1,47 @@
-var mongoose = require('mongoose');
-// // // var j$ = require('jquery');
-// // // var options = {
-// // // 	server: { poolSize: 5 },
-// // // 	replset: { rs_name: 'scraper_v1_replica' }
-// // // };
-// // // options.server.socketOptions = options.replset.socketOptions = { keepAlive: 1 };
-mongoose.connect('mongodb://localhost/scraper_v1');
+// var mongoose = require('mongoose');
+// // // // var j$ = require('jquery');
+// // // // var options = {
+// // // // 	server: { poolSize: 5 },
+// // // // 	replset: { rs_name: 'scraper_v1_replica' }
+// // // // };
+// // // // options.server.socketOptions = options.replset.socketOptions = { keepAlive: 1 };
+// mongoose.connect('mongodb://localhost/scraper_v1');
 
-var db = mongoose.connection;
-var Schema = mongoose.Schema;
-var testSchema = mongoose.Schema({
-	_id: String,
-	dummy3: String
-},
-{
-	collection: 'Test',
-	strict: false
-});
-db.once('open', function(callback){
-	var Test = mongoose.model('Testing', testSchema);
-	var remove = Test.remove();
-	remove.exec();
-	var thing = new Test({_id: mongoose.Types.ObjectId(),dummy: 'Hello'});
-	var anotherThing = new Test({_id: mongoose.Types.ObjectId(), dummy: 'Hello1',MORE: [{someMore: 'Hello'},{more:'Hello'}]});
-	thing.save(function(err,data){
-		if(err)console.log(err);
-		console.log(data);
-	});
-	anotherThing.save(function(err,data){
-		if(err)console.log(err);
-		console.log(data);
-		Test.findOne({dummy: 'Hello1'},{_id: 1, dummy3: 1}, function(err,data1){
-			console.log(data1.dummy3 === undefined ? 'No Dummy' : 'Yes Dummy');
-			// Test.update({_id: data1._id}, {dummy2: 'Hello2'}, function(err,data2){
-			// 	if(err)console.log(err);
-			// 	Test.findOne({dummy:'Hello1'},function(err,data3){
-			// 		console.log(data3);
-			// 	});
-			// });
+// var db = mongoose.connection;
+// var Schema = mongoose.Schema;
+// var testSchema = mongoose.Schema({
+// 	_id: String,
+// 	dummy3: String
+// },
+// {
+// 	collection: 'Test',
+// 	strict: false
+// });
+// db.once('open', function(callback){
+// 	var Test = mongoose.model('Testing', testSchema);
+// 	var remove = Test.remove();
+// 	remove.exec();
+// 	var thing = new Test({_id: mongoose.Types.ObjectId(),dummy: 'Hello'});
+// 	var anotherThing = new Test({_id: mongoose.Types.ObjectId(), dummy: 'Hello1',MORE: [{someMore: 'Hello'},{more:'Hello'}]});
+// 	thing.save(function(err,data){
+// 		if(err)console.log(err);
+// 		console.log(data);
+// 	});
+// 	anotherThing.save(function(err,data){
+// 		if(err)console.log(err);
+// 		console.log(data);
+// 		Test.findOne({dummy: 'Hello1'},{_id: 1, dummy3: 1}, function(err,data1){
+// 			console.log(data1.dummy3 === undefined ? 'No Dummy' : 'Yes Dummy');
+// 			// Test.update({_id: data1._id}, {dummy2: 'Hello2'}, function(err,data2){
+// 			// 	if(err)console.log(err);
+// 			// 	Test.findOne({dummy:'Hello1'},function(err,data3){
+// 			// 		console.log(data3);
+// 			// 	});
+// 			// });
 
-		});
-	});
-});
+// 		});
+// 	});
+// });
 // var Schema = mongoose.Schema;
 // db.once('open', function (callback) {
 // 	var kittySchema = mongoose.Schema({
@@ -178,32 +178,32 @@ db.once('open', function(callback){
 
 
 //Alchemy API keyword extraction
-// var express = require('express');
-// var AlchemyAPI = require('alchemyapi');
-// var alchemyapi = new AlchemyAPI();
-// var app = express();
-// var server = require('http').createServer(app);
+var express = require('express');
+var AlchemyAPI = require('alchemyapi');
+var alchemyapi = new AlchemyAPI();
+var app = express();
+var server = require('http').createServer(app);
 
-// app.set('port', process.env.PORT || 3000);
+app.set('port', process.env.PORT || 3000);
 
-// var demo_url = encodeURI('http://arrow.dit.ie/schfsehart/33/');
-// var output = {};
+var demo_url = encodeURI('http://arrow.dit.ie/schfsehart/33/');
+var output = {};
 
-// var port = process.env.PORT || 3000;
-// server.listen(port, function(){
-// 	console.log('Express server listening on port ' + port);
-// 	console.log('To view the example, point your favorite browser to: localhost:3000'); 
-// });
+var port = process.env.PORT || 3000;
+server.listen(port, function(){
+	console.log('Express server listening on port ' + port);
+	console.log('To view the example, point your favorite browser to: localhost:3000'); 
+});
 
-// function keywords(callback){
-// 	alchemyapi.keywords('url', demo_url, { 'sentiment':1 }, function(response) {
-// 		output['keywords'] = { url: demo_url, response:JSON.stringify(response,null,4), results:response['keywords'] };
-// 		callback(output);
-// 	});
-// }
+function keywords(callback){
+	alchemyapi.keywords('url', demo_url, { 'sentiment':0 }, function(response) {
+		output = response['keywords'];
+		callback(output);
+	});
+}
 
-// app.get('/', function(req,res){
-// 	keywords(function(data){
-// 		res.send(data);
-// 	})
-// });
+app.get('/', function(req,res){
+	keywords(function(data){		
+		res.send(data);
+	})
+});
