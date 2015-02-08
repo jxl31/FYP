@@ -49,7 +49,8 @@ var regex_key = '(context|ancestor_key)[=\\:](\\d+)',
 	regex_fname = 'author_fname.{3}%22(.*?)%22',
 	regex_lname = 'author_lname.{3}%22(.*?)%22',
 	regex_thesis = '[\\[\\(]Thesis[\\]\\)]',
-	regex_start = 'start=(\\d)';
+	regex_start = 'start=(\\d)',
+	regex_doc_count = 'Docs:\\s(\\d+)';
 	//regex_num = '\\((\\d+)\\)';
 
 /*
@@ -109,7 +110,7 @@ db.on('error', console.error);
 db.once('open', function (callback) {
 	console.log('Connected to mongodb!');
 	setInterval(cleanLoadAuthors(Authors), dbUpdateInterval);
-	setInterval(cleanLoadDiscpline(Disciplines), dbUpdateInterval);
+	//setInterval(cleanLoadDiscpline(Disciplines), dbUpdateInterval);
 
 	router.use(function(req, res, next) {
 		next(); // make sure we go to the next routes and don't stop here
@@ -127,13 +128,22 @@ db.once('open', function (callback) {
 	router.route('/author/:fname/:lname/:key').get(function(req,res){
 		Authors.findOne({fname:req.params.fname, lname: req.params.lname}, function(err,primary){
 			if(err) res.json(err);
-			else if(primary.details !== undefined){
-				AuthorDetails.findOne({_id: primary.detail_id}, function(err,details){
-					res.json(details);
+			if(primary === null){
+				console.log('New Author');
+				persistAndSendAuthorDetails(res, req.params.fname, req.params.lname, req.params.key);
+			}
+			else if(primary.detail_id !== undefined){
+				console.log('Not a new Author');
+				AuthorDetails.findOne({_id: primary.detail_id}, function(err,data){
+					if(err) res.json(err);
+					//data is stored in the _doc key and values are what is returned from the query
+					//just need to return the details because id is in the details as well.
+					else res.json(data._doc.details);
 				});
 			} else if(!primary){
 				res.json('Not in author list');	
 			} else {
+				console.log('New Author');
 				persistAndSendAuthorDetails(res, req.params.fname, req.params.lname, req.params.key);
 			}
 		});
@@ -168,13 +178,38 @@ function persistAndSendAuthorDetails(res,fname,lname, key){
 	var sAuthorURI = sGeneralURL.replace('firstname', fname).replace('lastname', lname).replace('authorKey', key);
 	var selectedAuthor = fname + ' ' + lname;
 	getAuthorData(sAuthorURI, start, skip, selectedAuthor, getAuthorData, resJSON , function(data){
+		console.log('Got here');
+		data['fname'] = fname;
+		data['lname'] = lname;
+		var new_id = mongoose.Types.ObjectId();
+		data['details_id'] = new_id;
 		var details = {
-			_id: mongoose.Types.ObjectId(),
+			_id: new_id,
 			details: data
 		};
-		AuthorDetails.create(details);
+		AuthorDetails.create(details, function(err,savedData){
+			if(err) console.log(err);
+			else console.log('Details ID: ' + savedData._id);
+		});
 		Authors.findOne({fname:fname , lname:lname}, {_id: 1} , function(err,author){
-			Authors.update({_id: author._id}, { detail_id: details._id });
+			if(err) console.log(err);
+			else if(author === null){
+				console.log('Creating new Author: ')
+				Authors.create({
+					_id: mongoose.Types.ObjectId(),
+					fname: data.fname,
+					lname: data.lname,
+					key: key,
+					count: data.num_found,
+					detail_id: new_id
+				},function(err,data){
+					console.log('created');
+				});
+			} else {
+				Authors.update({_id: author._id}, { detail_id: details._id }, function(err,updated){
+					console.log('Records Update: ' + updated);
+				});
+			}
 		});
 		res.json(data);
 	});
@@ -198,9 +233,11 @@ function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCa
 				} else{
 					formatBody(raw, selectedAuthor, function(formattedData){
 						//Saving the extracted JSON to a non-strict schema
-						extractKeywordDocs(formattedData, function(finalData){
-							finalCall(finalData);
-						});
+						//extractKeywordDocs(formattedData, function(finalData){
+							extractUniversities(formattedData, function(finalData2){
+								finalCall(finalData2);
+							});
+						//});
 					});
 				}
 
@@ -213,12 +250,69 @@ function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCa
 					callback(URL, start+skip, skip, selectedAuthor, callback, data, finalCall);
 				} else{
 					formatBody(data, selectedAuthor, function(formattedData){
-						finalCall(formattedData);
+						extractKeywordDocs(formattedData, function(finalData){
+							extractUniversities(finalData, function(finalData2){
+								finalCall(finalData2);
+							});
+						});
 					});
 				}
 			}
 
 		});
+}
+
+function extractUniversities(mainJSON, callback){
+	var temp = [];
+	var index = 0;
+	mainJSON.docs.forEach(function(doc){
+		extractUniversity(doc.url, function(result){
+			index++;
+			insertCoAuthorUni(mainJSON, result);
+			if(index === mainJSON.docs.length){
+				callback(mainJSON);
+			}
+		});
+	});
+}
+
+function extractUniversity(url, callback){
+	var temp = [];
+	sjs.StaticScraper
+	.create(url)
+	.scrape(function($){
+		$('p[class=author]').children('a:not([rel="nofollow"])').each(function(i,element){
+			var a = $(element);
+			var name = a.children('strong').text();
+			var uni = a.children('em').text();
+			var link = a.attr('href');
+			var fname = decodeURIComponent(link.match(regex_fname)[1]);
+			var lname = decodeURIComponent(link.match(regex_lname)[1]);
+			var key = link.match(regex_key);
+			temp.push({name: name, university: uni, fname: fname, lname: lname,key:key[2]});
+		});
+
+		return temp;
+	}, function(data){
+		callback(data);
+	});
+}
+
+
+function insertCoAuthorUni(mainJSON, tempArray){
+	for(var i = 0 ; i < mainJSON.coauthors.length; i++){
+		if(mainJSON.coauthors[i].university === undefined){
+			for(var j = 0; j < tempArray.length; j++){
+				if(tempArray[j].name.match(mainJSON.coauthors[i].name) !== null){
+					mainJSON.coauthors[i].university = tempArray[j].university;
+					mainJSON.coauthors[i].fname = tempArray[j].fname;
+					mainJSON.coauthors[i].lname = tempArray[j].lname;
+					mainJSON.coauthors[i].key = tempArray[j].key;
+					break;
+				}
+			}
+		}
+	}
 }
 
 function extractKeywordDocs(data, callback){
@@ -228,7 +322,7 @@ function extractKeywordDocs(data, callback){
 			temp.push({docTitle: doc.title, docKeywords: results});
 			if(temp.length === data.docs.length){
 				data['keywords'] = temp;
-				callback(data) //finalcallback;
+				callback(data); 
 			}
 		});
 	});
@@ -248,13 +342,12 @@ function formatBody(raw, selectedAuthor, callback){
 	var docs = temp.docs;
 	docs.forEach(function(doc,i){
 		var authors = doc.author_display;
-		console.log('Index ' + i + ': ' +authors);
 		authors.forEach(function(author){
 			if(author.indexOf(selectedAuthor)){
 				if(coauthorCount.length == 0){
 					coauthorCount.push({name: author, count: 1})
 				} else{
-					incrementCount(author,coauthorCount);
+					incrementCount(author,coauthorCount,selectedAuthor);
 				}
 			}
 		})
@@ -268,7 +361,7 @@ function formatBody(raw, selectedAuthor, callback){
 function cleanLoadAuthors(model){
 	clean(model);
 	clean(AuthorDetails);
-	console.log('Scraping Authors');
+	console.log('Scraping Authors: ' +  new Date());
 	sjs.StaticScraper
 	.create(URL_AUTHORS)
 	.scrape(function($) {
@@ -289,12 +382,13 @@ function cleanLoadAuthors(model){
 				 			var sFirstName = decodeURIComponent(sLink.match(regex_fname)[1]);
 							var sLastName = decodeURIComponent(sLink.match(regex_lname)[1]);
 							var sKey = sLink.match(regex_key);
+							var doc_count = sLabel.match(regex_doc_count)[1];
 				 			if(sLabel.match(regex_thesis)){
 				 				//if(array[array.length - 1].fname !== sFirstName && array[array.length - 1].lname !== sLastName){
-				 				temp.push({ _id: mongoose.Types.ObjectId(),fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], thesis: true});
+				 				temp.push({ _id: mongoose.Types.ObjectId(),fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], count: doc_count, thesis: true});
 				 				//}
 				 			} else{
-				 				temp.push({ _id: mongoose.Types.ObjectId(),fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], thesis: false});
+				 				temp.push({ _id: mongoose.Types.ObjectId(),fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], count: doc_count, thesis: false});
 				 			}
 				 		}
 					})
@@ -456,12 +550,12 @@ function scrapeAuthorsDiscipline(discipline, callback){
 	END: Discipline
 **************************/
 
-function incrementCount(author,array){
+function incrementCount(author,array,selectedAuthor){
 	for(var i = 0; i < array.length; i++){
-		if(array[i].name == author){
+		if(array[i].name.match(author)){
 			array[i].count++;
 			return;
-		}
+		};
 	}
 	array.push({name: author, count: 1});
 }
