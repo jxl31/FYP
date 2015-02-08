@@ -37,7 +37,7 @@ angular
         templateUrl: 'views/discipline.html',
         controller: 'DisciplineSearchCtrl'
       })
-      .when('/author/:fname/:lname/:key',{
+      .when('/author/:fname/:lname/:key/:viz',{
         templateUrl: 'views/visualisation.html',
         controller: 'MainVisCtrl'
       })

@@ -1,6 +1,6 @@
 <div class="row">
 	<div class="topic-list col-md-3">
-		<accordion close-others="false">
+		<accordion close-others="true">
 			<accordion-group data-ng-repeat="topic in topics" ng-init="TopicStatus.open = $first" is-open="TopicStatus.open">
 				<accordion-heading>
 					{{ topic.name }}<i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': TopicStatus.open, 'glyphicon-chevron-right': !TopicStatus.open}"></i>
@@ -16,9 +16,23 @@
 		<div data-ng-if="selectedViz === undefined">
 			Please Select Visualisation	
 		</div>
-		<h1>{{ author.authorName }} - {{selectedViz.label}}</h1>
+		<h1 class="trial">{{ author.authorName }} - {{selectedViz.label}}</h1>
+		<!-- pie chart -->
 		<custom-pie data="author.coauthors" ng-if="author.coauthors.length > 0 && selectedViz.value === 'coauthor-piechart'"></custom-pie>
+
+		<!-- bar chart -->
 		<custom-bar data="author.coauthors" ng-if="author.coauthors.length > 0 && selectedViz.value === 'coauthor-barchart'"></custom-bar>
-		<custom-bubble data="author" ng-if="author.coauthors.length > 0 && selectedViz.value === 'coauthor-bubble'"></custom-bubble>
+
+		<!-- bubble chart  -->
+		<custom-bubble data="author" viz="selectedViz" ng-if="author.coauthors.length > 0 && selectedViz.value === 'coauthor-bubble'"></custom-bubble>
+
+		<!-- network chart -->
+		<custom-network data="author" ng-if="author.coauthors.length > 0 && selectedViz.value === 'coauthor-network'"></custom-network>
+
+		<!-- trend graph -->
+		<custom-trend change="setSelectedVisualisation(viz)" data="author" ng-if="author.coauthors.length > 0 && selectedViz.value === 'publications-trend'"></custom-trend>
+
+		<custom-word-cloud data="author" ng-if="author.coauthors.length > 0 && selectedViz.value === 'publications-word'"></custom-word-cloud>
+
 	</div><!--  visualisation-panel -->
 </div>	

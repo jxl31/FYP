@@ -45,3 +45,11 @@
 	height: 100%;
 }
 
+/*
+	Dropdown
+*/
+.filter-list-box{
+	position: absolute; 
+	right:10px;
+}
+

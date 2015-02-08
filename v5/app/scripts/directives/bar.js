@@ -108,9 +108,9 @@ angular.module('myappApp')
 				        return height - yScale(d.count) + margin.top;
 				    })
 				    .delay(function(d, i) {
-				        return i * 20;
+				        return i * 50;
 				    })
-				    .duration(500)
+				    .duration(1000)
 					.ease('elastic');
 			}
 		};

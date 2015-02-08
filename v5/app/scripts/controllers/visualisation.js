@@ -28,19 +28,20 @@ angular.module('myappApp')
       ];
 
     $scope.author = {};
-    $scope.selectedViz = {label: 'Bubble Graph', value: 'coauthor-bubble'};
     $scope.statusGroup = { open: 'false' };
-
 
     var fname = $routeParams.fname;
     var lname = $routeParams.lname;
     var conceptKey = $routeParams.key;
+    var passedViz = $routeParams.viz;
 
     $scope.init = function(){
       var promiseA = AuthorAPI.getAuthor(fname,lname,conceptKey);
       promiseA.then(function(data){
         $scope.author = data;
       });
+
+      getIndexOfObjWithAttrValue('value',passedViz);
     };
     $scope.init();
 
@@ -51,8 +52,39 @@ angular.module('myappApp')
 
     $scope.setSelectedVisualisation = function(viz){
       $scope.selectedViz = viz;
+      setTopic(viz);
     };
+
+
+
+    function getIndexOfObjWithAttrValue(attr, value){
+      for(var i = 0; i < $rootScope.topics.length; i++){
+        for(var j = 0; j < $rootScope.topics[i].visualisations.length; j++){
+          if($rootScope.topics[i].visualisations[j].hasOwnProperty(attr) && 
+            $rootScope.topics[i].visualisations[j][attr] === value){
+            $scope.selectedViz = $rootScope.topics[i].visualisations[j];
+            $scope.selectedTopic = $rootScope.topics[i];
+            console.log($scope.selectedTopic);
+            return;
+          }
+        }
+
+      }
+
+      return null;
+    }
+
+    function setTopic(viz){
+      for(var i = 0; i < $rootScope.topics.length; i++){
+        if($.inArray(viz,$rootScope.topics[i]) >= 0){
+          $scope.selectedTopic = $rootScope.topics[i];
+          console.log($scope.selectedTopic);
+          return;
+        }
+      }
+    }
   });
+
 
 
 /**
@@ -63,7 +95,7 @@ angular.module('myappApp')
   .controller('BubbleModalCtrl', function($scope, $modalInstance, message){
     $scope.message = message;
     $scope.reply = 'Reply from model: HI MAIN!';
-
+    
     $scope.ok = function () {
       $modalInstance.close($scope.reply);
     };
