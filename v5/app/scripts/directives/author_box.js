@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('myappApp')
-	.directive('authorBox', ['$location', function ($location) {
+	.directive('authorBox', ['$location','$rootScope', function ($location,$rootScope) {
 		return {
 			restrict: 'AE',
 			scope:{
@@ -21,7 +21,8 @@ angular.module('myappApp')
 					if(scope.data.key === undefined){
 						scope.data.key = 490738;
 					}
-					var path = '/author/'+scope.data.fname+'/'+scope.data.lname+'/'+scope.data.key;
+					console.log($rootScope.topics);
+					var path = '/author/'+scope.data.fname+'/'+scope.data.lname+'/'+scope.data.key+'/'+$rootScope.topics[0].visualisations[3].value;
       				$location.path(path);
 				}
 

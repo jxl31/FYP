@@ -1,0 +1,12 @@
+<div class="network-filter-container">
+	<button class="btn btn-success" data-ng-click="openFilterModal()">Add Filter <span class="glyphicon glyphicon-filter"></span></button>
+	<div ng-include="'views/modals/bubble_filter.html'"></div>
+	<div ng-show="reply">Selection from a modal: {{ reply }}</div>
+	<button class="btn btn-primary" type="button" data-ng-repeat="filter in selectedFilters">
+	  {{filter}} <span class="badge"><i class="glyphicon glyphicon-remove"></i></span>
+	</button>
+</div>
+<div class="network-visualisation-container">
+	<div ng-include="'views/modals/bubble_popover.html'"></div>
+	<div id="legend-network"></div>
+</div>

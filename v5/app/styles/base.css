@@ -1,0 +1,97 @@
+@import url('http://fonts.googleapis.com/css?family=Open+Sans:400,700');
+
+/*
+	Network Graph
+ */
+.node-children-text{
+	font-family: 'Open Sans 400',serif;
+	fill: #1919FF;
+	opacity: 0.8;
+	font-size: 1.25em;
+}
+
+.node-parent-text{
+	font-family: 'Open Sans 700',serif;
+	fill: #FF0066;
+	opacity: 0.9;
+	font-size: 1.5em;
+	font-weight: bold;
+}
+
+.node-active{
+	font-size: 2em;
+}
+
+/*
+	Trend Graph
+*/
+
+.trend-axis path,
+.trend-axis line{
+	fill: none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+
+.trend-x.trend-axis.trend-y path{
+  display: none;
+}
+
+.trend-line {
+	fill: none;
+	stroke: steelblue;
+	stroke-width: 1.5px;
+}
+
+.xlabel, .ylabel {
+	font-family: 'Open Sans 700', serif;
+    font-weight: bold;
+	font-size: 2em;
+}
+
+.d3-tip {
+	line-height: 2;
+	font-weight: bold;
+	padding: 12px;
+	background: rgba(0, 0, 0, 0.8);
+	color: #fff;
+	border-radius: 2px;
+	width: 300px;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+/*arrow*/
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+/*Legend*/
+.legend{
+	position: absolute;
+	right:-90px;
+    display:inline-block;
+    border-collapse: collapse;
+    border-spacing: 0px;
+}
+.legend td{
+    padding:4px 5px;
+    vertical-align:bottom;
+}
+.legend tr{    border-bottom:1px solid grey; }
+.legend tr:first-child{    border-top:1px solid grey; }

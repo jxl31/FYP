@@ -1,14 +1,38 @@
-<div class="btn-group" dropdown is-open="status.isopen" style="position: absolute;">
-	<button type="button" class="btn btn-primary dropdown-toggle" dropdown-toggle ng-disabled="disabled">
-		{{ selectedDiagram.name }} <span class="caret"></span>
-	</button>
-	<ul id="diagramDropdown" class="dropdown-menu" role="menu">
-    	<li data-ng-repeat="diagram in diagrams">
-    		<a ng-click="toggleDiagram(diagram)" >{{ diagram.name }}</a>
-    	</li>
-    </ul>
+<div class="row">
+	<div class="topic-list col-md-3">
+		<accordion close-others="true">
+			<accordion-group data-ng-repeat="topic in topics" ng-init="TopicStatus.open = $first" is-open="TopicStatus.open">
+				<accordion-heading>
+					{{ topic.name }}<i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': TopicStatus.open, 'glyphicon-chevron-right': !TopicStatus.open}"></i>
+				</accordion-heading>
+				<button type="button" class="btn btn-default topic-list-item" data-ng-repeat="visualisation in topic.visualisations"
+				data-ng-click="setSelectedVisualisation(visualisation)">
+					{{ visualisation.label }}
+				</button>
+			</accordion-group>
+		</accordion>
+	</div> <!-- topic-list -->
+	<div class="visualisation-panel col-md-9">
+		<div data-ng-if="selectedViz === undefined">
+			Please Select Visualisation	
+		</div>
+		<h1 class="trial">{{ author.authorName }} - {{selectedViz.label}}</h1>
+		<!-- pie chart -->
+		<custom-pie data="author.coauthors" ng-if="author.coauthors.length > 0 && selectedViz.value === 'coauthor-piechart'"></custom-pie>
 
-</div>
+		<!-- bar chart -->
+		<custom-bar data="author.coauthors" ng-if="author.coauthors.length > 0 && selectedViz.value === 'coauthor-barchart'"></custom-bar>
 
-<custom-pie data="author.coauthors" ng-if="author.coauthors.length > 0 && selectedDiagram.diagram === 'coauthorpie'"></custom-pie>
-<custom-bar data="author.coauthors" ng-if="author.coauthors.length > 0 && selectedDiagram.diagram === 'coauthorbar'"></custom-bar>
+		<!-- bubble chart  -->
+		<custom-bubble data="author" viz="selectedViz" ng-if="author.coauthors.length > 0 && selectedViz.value === 'coauthor-bubble'"></custom-bubble>
+
+		<!-- network chart -->
+		<custom-network data="author" ng-if="author.coauthors.length > 0 && selectedViz.value === 'coauthor-network'"></custom-network>
+
+		<!-- trend graph -->
+		<custom-trend change="setSelectedVisualisation(viz)" data="author" ng-if="author.coauthors.length > 0 && selectedViz.value === 'publications-trend'"></custom-trend>
+
+		<custom-word-cloud data="author" ng-if="author.coauthors.length > 0 && selectedViz.value === 'publications-word'"></custom-word-cloud>
+
+	</div><!--  visualisation-panel -->
+</div>	
