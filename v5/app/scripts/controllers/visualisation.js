@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('myappApp')
-  .controller('MainVisCtrl', function ($scope, $routeParams, AuthorAPI, $rootScope) {
+  .controller('MainVisCtrl', function ($scope, $routeParams, AuthorAPI, $rootScope, $location) {
     $scope.awesomeThings = [
       'HTML5 Boilerplate',
       'AngularJS',
@@ -50,10 +50,20 @@ angular.module('myappApp')
       }
     });
 
-    $scope.setSelectedVisualisation = function(viz){
+    $scope.setSelectedVisualisation = function(viz,docs){
+      if(docs !== undefined){
+        $scope.indexDocsForCloud = docs;
+      }
       $scope.selectedViz = viz;
+      console.log($scope.selectedViz);
       setTopic(viz);
     };
+
+    $scope.changePath = function changePath(viz){
+      console.log(viz);
+      var path = '/author/'+$scope.author.fname+'/'+$scope.author.lname+'/'+conceptKey+'/'+viz.value;
+      $location.path(path);
+    }
 
 
 
@@ -78,11 +88,12 @@ angular.module('myappApp')
       for(var i = 0; i < $rootScope.topics.length; i++){
         if($.inArray(viz,$rootScope.topics[i]) >= 0){
           $scope.selectedTopic = $rootScope.topics[i];
-          console.log($scope.selectedTopic);
+          $scope.$apply();
           return;
         }
       }
     }
+
   });
 
 

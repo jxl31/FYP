@@ -22,7 +22,7 @@ angular.module('myappApp')
 						scope.data.key = 490738;
 					}
 					console.log($rootScope.topics);
-					var path = '/author/'+scope.data.fname+'/'+scope.data.lname+'/'+scope.data.key+'/'+$rootScope.topics[0].visualisations[3].value;
+					var path = '/author/'+scope.data.fname+'/'+scope.data.lname+'/'+scope.data.key+'/'+$rootScope.topics[0].visualisations[1].value;
       				$location.path(path);
 				}
 

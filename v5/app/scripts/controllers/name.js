@@ -42,7 +42,7 @@ angular.module('myappApp')
   	};
 
     $scope.clicked = function(oAuthor){
-      var path = '/author/'+oAuthor.fname+'/'+oAuthor.lname+'/'+oAuthor.key+'/'+$rootScope.topics[0].visualisations[3].value;
+      var path = '/author/'+oAuthor.fname+'/'+oAuthor.lname+'/'+oAuthor.key+'/'+$rootScope.topics[0].visualisations[1].value;
       $location.path(path);
     };
 

@@ -109,14 +109,16 @@ angular.module('myappApp')
 					  .attr('fill', 'white')
 					  .attr('stroke', 'steelblue')
 					  .attr('stroke-width', '3')
-					  .on('mouseover', tip.show)
+					  .on('mouseover', function(d){
+					  	tip.show(d);
+					  })
 					  .on('mouseout', tip.hide)
 					  .on('click', function(d){ goToCloudGraph(d); });
 				});
 
 				
 				function goToCloudGraph(d){
-					scope.change({viz: $rootScope.topics[1].visualisations[1]});
+					scope.change({viz: $rootScope.topics[1].visualisations[1], docs: d.titles });
 					scope.$apply();
 				}
 

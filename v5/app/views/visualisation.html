@@ -6,7 +6,8 @@
 					{{ topic.name }}<i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': TopicStatus.open, 'glyphicon-chevron-right': !TopicStatus.open}"></i>
 				</accordion-heading>
 				<button type="button" class="btn btn-default topic-list-item" data-ng-repeat="visualisation in topic.visualisations"
-				data-ng-click="setSelectedVisualisation(visualisation)">
+					data-ng-click="changePath(visualisation)">
+					<!-- data-ng-click="setSelectedVisualisation(visualisation)" -->
 					{{ visualisation.label }}
 				</button>
 			</accordion-group>
@@ -30,9 +31,9 @@
 		<custom-network data="author" ng-if="author.coauthors.length > 0 && selectedViz.value === 'coauthor-network'"></custom-network>
 
 		<!-- trend graph -->
-		<custom-trend change="setSelectedVisualisation(viz)" data="author" ng-if="author.coauthors.length > 0 && selectedViz.value === 'publications-trend'"></custom-trend>
+		<custom-trend change="setSelectedVisualisation(viz,docs)"  data="author" ng-if="author.coauthors.length > 0 && selectedViz.value === 'publications-trend'"></custom-trend>
 
-		<custom-word-cloud data="author" ng-if="author.coauthors.length > 0 && selectedViz.value === 'publications-word'"></custom-word-cloud>
+		<custom-word-cloud data="author" indexes="indexDocsForCloud" ng-if="author.coauthors.length > 0 && selectedViz.value === 'publications-word'"></custom-word-cloud>
 
 	</div><!--  visualisation-panel -->
 </div>	

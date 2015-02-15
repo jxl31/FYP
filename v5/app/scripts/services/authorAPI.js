@@ -36,6 +36,23 @@ angular.module('myappApp')
 				return deferred.promise;
 			};
 
+			factory.saveKeywords = function(details_id, keywords){
+				var deferred = $q.defer();
+				var uri = prefix + 'author/'+details_id+'/'+JSON.stringify(keywords);
+				var url = encodeURI(uri);
+				console.log(url);
+
+				$http({
+					url: url,
+					cache: 'false',
+					method: 'PUT'
+				}).success(function(msg){
+					deferred.resolve(msg);
+				});
+
+				return deferred.promise;
+			}
+
 			return factory;
 		}
 ]);
