@@ -115,20 +115,22 @@
 
 
 //callback example
-// function try1(obj, callback, another){
-// 	var total = obj.n+obj.m;
-// 	if(!another) console.log('third parameter is: ' + another);
-// 	callback(total);
-// }
+function try1(obj, callback, another){
+	var total = obj.n+obj.m;
+	if(!another) console.log('third parameter is: ' + another);
+	callback(total);
+}
 
-// try1({n: 4, m:6},function(n){
-// 	console.log(n);
-// 	try1({n: 1, m: 2},try1);
-// })
+try1({n: 4, m:6},function(n){
+	console.log(n);
+	try1({n: 1, m: 2},function(data){
+		console.log(data);
+	});
+})
 
-// function print(total){
-// 	console.log(total)
-// }
+function print(total){
+	console.log(total)
+}
 
 
 
@@ -178,32 +180,32 @@
 
 
 //Alchemy API keyword extraction
-var express = require('express');
-var AlchemyAPI = require('alchemyapi');
-var alchemyapi = new AlchemyAPI();
-var app = express();
-var server = require('http').createServer(app);
+// var express = require('express');
+// var AlchemyAPI = require('alchemyapi');
+// var alchemyapi = new AlchemyAPI();
+// var app = express();
+// var server = require('http').createServer(app);
 
-app.set('port', process.env.PORT || 3000);
+// app.set('port', process.env.PORT || 3000);
 
-var demo_url = encodeURI('http://arrow.dit.ie/schfsehart/33/');
-var output = {};
+// var demo_url = encodeURI('http://arrow.dit.ie/schfsehart/33/');
+// var output = {};
 
-var port = process.env.PORT || 3000;
-server.listen(port, function(){
-	console.log('Express server listening on port ' + port);
-	console.log('To view the example, point your favorite browser to: localhost:3000'); 
-});
+// var port = process.env.PORT || 3000;
+// server.listen(port, function(){
+// 	console.log('Express server listening on port ' + port);
+// 	console.log('To view the example, point your favorite browser to: localhost:3000'); 
+// });
 
-function keywords(callback){
-	alchemyapi.keywords('url', demo_url, { 'sentiment':0 }, function(response) {
-		output = response['keywords'];
-		callback(output);
-	});
-}
+// function keywords(callback){
+// 	alchemyapi.keywords('url', demo_url, { 'sentiment':0 }, function(response) {
+// 		output = response['keywords'];
+// 		callback(output);
+// 	});
+// }
 
-app.get('/', function(req,res){
-	keywords(function(data){		
-		res.send(data);
-	})
-});
+// app.get('/', function(req,res){
+// 	keywords(function(data){		
+// 		res.send(data);
+// 	})
+// });
