@@ -11,9 +11,11 @@ angular.module('myappApp')
 			templateUrl: 'views/visualisation/cloud.html',
 			scope: {
 				data: '=data',
-				indexes: '=indexes'
+				indexes: '=indexes',
+				loading: '&',
 			},
 			link: function (scope, iElement, iAttrs) {
+				scope.loading({loaded: false});
 				var margin = {
 						top: 50,
 						right: 20,
@@ -27,11 +29,15 @@ angular.module('myappApp')
 
 			    processData(function(words){
 			    	console.log(words);
-			    	var promiseK = AuthorAPI.saveKeywords(scope.data.details_id, words);
-			    	promiseK.then(function(msg){
-			    		console.log(msg);
-			    	});
-
+			    	if(scope.data.processedKeywords === undefined){
+			    		words.forEach(function(d){
+			    			checkWordsForwardSlash(d);
+			    		});
+			    		var promiseK = AuthorAPI.saveKeywords(scope.data.details_id, words);
+				    	promiseK.then(function(msg){
+				    		console.log(msg);
+				    	});
+			    	}
 			    	d3.layout.cloud()
 			    		.size([width, height])
 						.timeInterval(10)
@@ -76,8 +82,10 @@ angular.module('myappApp')
 						var wScale = max === 30 ? 45 : 20; 
 						if(scope.indexes === undefined){
 							scope.data.keywords.forEach(function(d){
+								console.log(d.docTitle);
+								var docLength = d.docKeywords.length;
 								for(var i = 0; i < max; i++){
-									if(i < d.docKeywords.length){
+									if(i < docLength){
 										if(!ifSimilarWords(tempWords, d.docKeywords[i].text)){
 											tempWords.push({
 												text: d.docKeywords[i].text, 
@@ -94,8 +102,9 @@ angular.module('myappApp')
 							for(var i = 0; i < scope.indexes.length; i++){
 								for(var j = 0; j < scope.data.keywords.length; j++){
 									if(scope.indexes[i] === scope.data.keywords[j].docTitle){
+										var docLength = scope.data.keywords[j].docKeywords.length;
 										for(var x = 0; x < max ; x++){
-											if(x < scope.data.keywords[j].docKeywords.length){
+											if(x < docLength){
 												//console.log('x:' + x + ', l:' + scope.data.keywords[j].docKeywords.length);
 												if(!ifSimilarWords(tempWords, scope.data.keywords[j].docKeywords[x].text)){
 													tempWords.push({
@@ -116,8 +125,14 @@ angular.module('myappApp')
 						tempWords.push(scope.data.processedKeywords);
 					}
 	
-
+					scope.loading({loaded: true});
 					callback(tempWords);
+				}
+
+				function checkWordsForwardSlash(word){
+					if(word.text.indexOf('/') != -1){
+						word.text = word.text.replace('/' , ' or ');
+					}
 				}
 
 				function ifSimilarWords(array, lookupWord){
@@ -152,15 +167,15 @@ angular.module('myappApp')
 
 					// Fill in the rest of the matrix
 					for(i = 1; i <= w2.length; i++){
-					for(j = 1; j <= w1.length; j++){
-					  if(w2.charAt(i-1) == w1.charAt(j-1)){
-					    matrix[i][j] = matrix[i-1][j-1];
-					  } else {
-					    matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
-					                            Math.min(matrix[i][j-1] + 1, // insertion
-					                                     matrix[i-1][j] + 1)); // deletion
-					  }
-					}
+						for(j = 1; j <= w1.length; j++){
+						  if(w2.charAt(i-1) == w1.charAt(j-1)){
+						    matrix[i][j] = matrix[i-1][j-1];
+						  } else {
+						    matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
+						                            Math.min(matrix[i][j-1] + 1, // insertion
+						                                     matrix[i-1][j] + 1)); // deletion
+						  }
+						}
 					}
 
 					return matrix[w2.length][w1.length];

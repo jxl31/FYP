@@ -41,6 +41,14 @@ angular
         templateUrl: 'views/visualisation.html',
         controller: 'MainVisCtrl'
       })
+      .when('/author/:fullname/:link/:viz', {
+        templateUrl: 'views/visualisation.html',
+        controller: 'MainVisCtrl'
+      })
+      .when('/author/:details_id', {
+        templateUrl: 'views/visualisation.html',
+        controller: 'MainVisCtrl'
+      })
       .otherwise({
         redirectTo: '/'
       });

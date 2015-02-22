@@ -12,9 +12,6 @@ body {
 }
 
 /* Custom page header */
-.header {
-  border-bottom: 1px solid #e5e5e5;
-}
 /* Make the masthead heading the same height as the navigation */
 .header h3 {
   margin-top: 0;
@@ -33,6 +30,18 @@ body {
 .btn-main-selection{
   width: 60%;
 }
+
+/* Custom main */
+.loading{
+  z-index: 1000;
+  text-align: middle;
+}
+
+.loading img{
+  width: 300px;
+  height: 300px;
+}
+
 
 /* Customize container */
 @media (min-width: 1224px) {
@@ -65,7 +74,7 @@ body {
   }
   /* Space out the masthead */
   .header {
-    margin-bottom: 30px;
+    margin-bottom: 0px;
   }
   /* Remove the bottom border on the jumbotron for visual effect */
   .jumbotron {

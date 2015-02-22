@@ -4,9 +4,20 @@
 		<div data-ng-if="selectedDiscipline === undefined">
 			Please select a discipline
 		</div>
-		
-		<author-box data-ng-repeat="author in selectedDiscipline.authors" data="author">
-
-		</author-box>
+		<div data-ng-if="selectedDiscipline !== undefined">
+			<div class="filter-list-box btn-group" dropdown is-open="status.isopen">
+				<button type="button" class="btn btn-primary dropdown-toggle" dropdown-toggle ng-disabled="disabled">
+					<span class="glyphicon glyphicon-th-list"></span> {{selectedFilter.label}}
+				</button>
+				<ul id="diagramDropdown" class="dropdown-menu" role="menu">
+			    	<li data-ng-repeat="filter in filterList">
+			    		<a ng-click="toggleFilter(filter)" >{{ filter.label }}</a>
+			    	</li>
+			    </ul>
+			</div>
+			
+			<author-box data-ng-repeat="author in selectedDiscipline.authors | orderBy: selectedFilter.value" data="author">
+			</author-box>
+		</div>
 	</div>	
 </div>

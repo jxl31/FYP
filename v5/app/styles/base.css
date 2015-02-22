@@ -5,7 +5,7 @@
  */
 .node-children-text{
 	font-family: 'Open Sans 400',serif;
-	fill: #1919FF;
+	fill: #000;
 	opacity: 0.8;
 	font-size: 1.25em;
 }
@@ -88,10 +88,19 @@
     display:inline-block;
     border-collapse: collapse;
     border-spacing: 0px;
+    max-width: 250px;
 }
 .legend td{
     padding:4px 5px;
-    vertical-align:bottom;
+    vertical-align:middle;
+    border-left: 1px solid;
+    border-right: 1px solid;
+    text-align: center;
 }
 .legend tr{    border-bottom:1px solid grey; }
 .legend tr:first-child{    border-top:1px solid grey; }
+
+.legend-color-td{
+	text-align: center;
+	vertical-align: middle;
+}

@@ -36,6 +36,41 @@ angular.module('myappApp')
 				return deferred.promise;
 			};
 
+			factory.getAuthorFromDiscipline = function(fullname, link){
+				var deferred = $q.defer();
+				var fullName = encodeURIComponent(fullname);
+				var uri = prefix+'author/'+ fullname + '/' + link;
+				var url = encodeURI(uri);
+				console.log(url);
+
+				$http({
+					url: url,
+					cache: 'true',
+					method: 'GET',
+					type: 'application/json'
+				}).success(function(data){
+					deferred.resolve(data);
+				});
+
+				return deferred.promise;
+			}
+
+			factory.getAuthorDetails = function(details_id){
+				var deferred = $q.defer();
+				var uri = prefix+'author/'+details_id;
+
+				$http({
+					url: url,
+					cache: 'true',
+					method: 'GET',
+					type: 'application/json'
+				}).success(function(data){
+					deferred.resolve(data);
+				});
+
+				return deferred.promise;
+			}
+
 			factory.saveKeywords = function(details_id, keywords){
 				var deferred = $q.defer();
 				var uri = prefix + 'author/'+details_id+'/'+JSON.stringify(keywords);

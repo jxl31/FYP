@@ -8,9 +8,9 @@ angular.module('myappApp')
 				data: '=data'
 			},
 			link: function (scope, iElement, iAttrs) {
-				var margin = {top: 20, right: 60, bottom: 70, left: 60};
+				var margin = {top: 40, right: 100, bottom: 200, left: 35};
 				var width = $('.visualisation-panel').width(),
-	    			height = 450 - margin.top - margin.bottom;
+	    			height = 550 - margin.top - margin.bottom;
 
 	    		var color = d3.scale.category10(),
 	    			tempColor;
@@ -98,8 +98,6 @@ angular.module('myappApp')
 				            .style('opacity', 1)
 				            .style('fill', tempColor);
 					});
-
-
 				barChart.transition()
 					.attr('height', function(d) {
 				        return yScale(d.count);

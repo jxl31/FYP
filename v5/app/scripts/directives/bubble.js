@@ -7,6 +7,7 @@ angular.module('myappApp')
 				restrict: 'EA',
 				templateUrl: 'views/visualisation/bubble.html',
 				scope: {
+					paramSize: '=paramSize',
 					authorData: '=data',
 					viz: '='
 				},
@@ -105,7 +106,16 @@ angular.module('myappApp')
 							.ease('elastic');
 
 						node.on('click', function(d){
-							var path = '/author/'+d.fname+'/'+d.lname+'/'+d.key+'/'+scope.viz.value;
+							var path = '';
+							if(!scope.authorData.corp){
+								path = '/author/'+d.fname+'/'+d.lname+'/'+d.key+'/'+scope.viz.value;
+							} else {
+								path = '/author/' +
+										'/' + d.fullname + 
+										'/' + d.link +
+										'/' + scope.viz.value;
+							}
+							
 	      					$location.path(path);
 	      					tip.hide();
 	      					scope.$apply();
@@ -126,10 +136,24 @@ angular.module('myappApp')
 						//node.call(drag);
 
 						//Legend
-					 	var legend = d3.select('#legend').append('table')
+					 	var legend = d3.select('#legend-bubble').append('table')
 									.attr('class','legend');
+
+						var tBodyTitle = legend.append('tbody');
+						var tBody = legend.append('tbody');
+
+						var tButton = $('<button/>', {
+							text: 'Legend',
+							id: 'legendTitleButton',
+							click: function(){
+								$('#legend-bubble').children('table').children('tbody:nth-child(2)').toggle('ease');
+							},
+							class: 'btn btn-lrg'
+						});
+						var tTitle = $('#legend-bubble').children('table').children('tbody:first-child').append(tButton);
+
 						// create one row per segment.
-				        var tr = legend.append("tbody").selectAll("tr").data(scope.universities).enter().append("tr");
+				        var tr = tBody.selectAll("tr").data(scope.universities).enter().append("tr");
 				            
 				        // create the first column for each segment.
 				        tr.append("td").append("svg").attr("width", '16').attr("height", '16').append("rect")
@@ -138,9 +162,6 @@ angular.module('myappApp')
 
 						// create the second column for each segment.
 					    tr.append("td").text(function(d){ return d;});
-
-
-
 					});
 
 					/*
@@ -249,7 +270,9 @@ angular.module('myappApp')
 								university: d.university,
 								fname: d.fname,
 								lname: d.lname,
-								key: d.key
+								key: d.key,
+								fullname: d.fullname,
+								link: d.link
 							}
 						});
 

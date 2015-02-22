@@ -42,7 +42,9 @@ angular.module('myappApp')
 				var nodes = [{name: scope.data.authorName}],
 					links = [];
 
-				var circleRadius = 20;
+				var circleRadius = 20,
+					circleLarge = 5,
+					tempRadius;
 
 				var svg = d3.select(el).append('svg')
 				    .attr('width', function(){
@@ -55,24 +57,40 @@ angular.module('myappApp')
 
 
 				processData(function(){
+
 					var legend = d3.select('#legend-network').append('table')
 								.attr('class','legend');
 					// create one row per segment.
-			        var tr = legend.append("tbody").selectAll("tr").data(scope.universities).enter().append("tr");
+					var tBodyTitle = legend.append('tbody');
+					var tBody = legend.append('tbody');
+
+
+					var tButton = $('<button/>', {
+						text: 'Legend',
+						id: 'legendTitleButton',
+						click: function(){
+							$('#legend-network').children('table').children('tbody:nth-child(2)').toggle('ease');
+						},
+						class: 'btn btn-lrg'
+					});
+					var tTitle = $('#legend-network').children('table').children('tbody:first-child').append(tButton);
+					//rows
+			        var tr = tBody.selectAll('tr').data(scope.universities).enter().append('tr');
 			            
 			        // create the first column for each segment.
-			        tr.append("td").append("svg").attr("width", '16').attr("height", '16').append("rect")
-			            .attr("width", '16').attr("height", '16')
-						.attr("fill",function(d,i){ return color(i); });
+			        tr.append('td').attr('class','legend-color-td')
+			        	.append('svg').attr('width', '16').attr('height', '16').append('rect')
+			            .attr('width', '16').attr('height', '16')
+						.attr('fill',function(d,i){ return color(i); });
 
 					// create the second column for each segment.
-				    tr.append("td").text(function(d){ return d;});
+				    tr.append('td').text(function(d){ return d;});
 
 					var force = d3.layout.force()
 						.nodes(nodes)
 						.links([])
 						.charge(function(){
-							return links.length > 20 ? -500 : -1000
+							return links.length > 15 ? -300 : -400
 						})
 						.gravity(0.1)
 						.size([width, height]);
@@ -92,11 +110,16 @@ angular.module('myappApp')
 					node.append('circle')
 						.attr('cx', function(d){return d.x;})
 						.attr('cy', function(d){return d.y;})
-						.attr('r', circleRadius)
+						.attr('r', function(d) { 
+							if(d.times != undefined) return circleRadius + d.times * 1.5;
+							else return circleRadius; 
+						})
 						.attr('fill', function(d,i){return color($.inArray(d.university, scope.universities));});
 
 					node.append('text')
-						.text(function(d) {return d.name})
+						.text(function(d) {
+								return d.name.substring(0, 20 / 2);
+							})
 						.attr('class', function(d,i){
 							if(i === 0){
 								return 'node-parent-text';
@@ -105,15 +128,15 @@ angular.module('myappApp')
 							}
 						})
 						.attr('text-anchor', 'middle')
-						.attr('dy', '-1.5em');
+						.attr('dy', '-1.7em');
 
 					//Actions
 					node
 						.on('mouseover', function(d){
 							//Circle
-							//var temp = d3.select(this).select('circle').attr('r'));
+							tempRadius = parseInt($(this).children('circle').attr('r'));
 							d3.select(this).select('circle')
-								.attr('r', circleRadius+5);
+								.attr('r', tempRadius + circleLarge);	
 							//Text
 							d3.select(this).select('text')
 								.classed('node-active', true);
@@ -128,7 +151,7 @@ angular.module('myappApp')
 						.on('mouseout', function(d){
 							//Circle
 							d3.select(this).select('circle')
-								.attr('r', circleRadius);
+								.attr('r', tempRadius);
 
 							//Text
 							d3.select(this).select('text')
@@ -170,9 +193,14 @@ angular.module('myappApp')
 				function processData(callback){
 					//{source: authorName, target: first variable in nodes}
 					scope.data.coauthors.forEach(function(author){
-						nodes.push({name: author.name, target: [0], times: author.count, university: author.university});
+						nodes.push({name: author.name, 
+							target: [0], 
+							times: author.count,
+							dates: author.dates,
+							university: author.university,
+						});
 
-						if($.inArray(author.university,scope.universities) < 0)
+						if($.inArray(author.university, scope.universities) < 0)
 							scope.universities.push(author.university);
 					});
 
@@ -182,7 +210,7 @@ angular.module('myappApp')
 					                  links.push({
 					                        source: nodes[i],
 					                        target: nodes[nodes[i].target[x]]
-					                  })
+					                  });
 					            }
 					      }
 					}

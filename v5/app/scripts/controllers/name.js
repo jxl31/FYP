@@ -8,9 +8,10 @@ angular.module('myappApp')
   	});
 
   	$scope.authors = [];
+    $scope.loaded = false;
     $scope.searchQuery = '';
     $scope.filterList = [{label: 'A-Z Firstname', value:'+fname'},
-                         {label: 'No. Documents', value:'+count'}];
+                         {label: 'No. Documents', value:'-count'}];
 
     $rootScope.topics = [
         {name: 'Co-Author', visualisations: [
@@ -37,8 +38,9 @@ angular.module('myappApp')
   			$scope.authors = authors;
   		});
 
-      $scope.selectedFilter = $scope.filterList[0];
-      $scope.prevFilter = $scope.filterList[0];
+      $scope.selectedFilter = $scope.filterList[1];
+      $scope.prevFilter = $scope.filterList[1];
+      $scope.loaded = true;
   	};
 
     $scope.clicked = function(oAuthor){

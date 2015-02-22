@@ -22,7 +22,19 @@ angular.module('myappApp')
 						scope.data.key = 490738;
 					}
 					console.log($rootScope.topics);
-					var path = '/author/'+scope.data.fname+'/'+scope.data.lname+'/'+scope.data.key+'/'+$rootScope.topics[0].visualisations[1].value;
+					var currentLocation = $location.path();
+					//check if in path discipline if so use discipline way to get author details
+					if(currentLocation === '/discipline'){
+						var encodedFullName = encodeURI(scope.data.fullname);
+						var path='/author/'+ encodedFullName + //fullname
+									'/' + scope.data.link +
+									'/' + $rootScope.topics[0].visualisations[1].value; //viz
+					} else { 
+						var path = '/author/'+scope.data.fname+ //first name
+								'/'+scope.data.lname+ //last name
+								'/'+scope.data.key+ //key
+								'/'+$rootScope.topics[0].visualisations[1].value; //viz
+					}
       				$location.path(path);
 				}
 
