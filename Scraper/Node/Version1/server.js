@@ -150,6 +150,17 @@ db.once('open', function (callback) {
 		//TODO: Get Keywords for every document that the author has.
 	});
 
+	router.route('/author/:details_id/:keywords').put(function(req,res){
+		var d_id =  req.params.details_id;
+		var p_keywords = req.params.keywords;
+		AuthorDetails.update({_id: d_id},{processedKeywords: p_keywords}, function(err,data){
+			if(err) res.json(err);
+			else{
+				console.log(data);
+			}
+		})
+	})
+
 	//ROUTE: Get all disciplines
 	router.route('/disciplines').get(function(req,res){
 		Disciplines.find({}, function(err, disciplines){
@@ -233,11 +244,11 @@ function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCa
 				} else{
 					formatBody(raw, selectedAuthor, function(formattedData){
 						//Saving the extracted JSON to a non-strict schema
-						//extractKeywordDocs(formattedData, function(finalData){
-							extractUniversities(formattedData, function(finalData2){
+						extractKeywordDocs(formattedData, function(finalData){
+							extractUniversities(finalData, function(finalData2){
 								finalCall(finalData2);
 							});
-						//});
+						});
 					});
 				}
 
