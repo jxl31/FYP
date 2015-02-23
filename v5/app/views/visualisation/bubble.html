@@ -1,9 +1,10 @@
 <div class="bubble-filter-container">
 	<button class="btn btn-success" data-ng-click="openFilterModal()">Add Filter <span class="glyphicon glyphicon-filter"></span></button>
 	<div ng-include="'views/modals/bubble_filter.html'"></div>
-	<div ng-show="reply">Selection from a modal: {{ reply }}</div>
 	<button class="btn btn-primary" type="button" data-ng-repeat="filter in selectedFilters">
-	  {{filter}} <span class="badge"><i class="glyphicon glyphicon-remove"></i></span>
+	  {{ filter.filterLabel }} 
+	  	<span class="badge"> {{filter.value}} </span> 
+	  	<span class="badge"><i class="glyphicon glyphicon-remove"></i></span>
 	</button>
 </div>
 <div class="bubble-visualisation-container">

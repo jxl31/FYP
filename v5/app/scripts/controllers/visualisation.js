@@ -137,12 +137,36 @@ angular.module('myappApp')
 **/
 
 angular.module('myappApp')
-  .controller('BubbleModalCtrl', function($scope, $modalInstance, message){
-    $scope.message = message;
+  .controller('BubbleModalCtrl', function($scope, $modalInstance, filters){
+    $scope.filters = filters;
+    console.log($scope.filters);
+
+    $scope.selects = getSelects();
+
     $scope.reply = 'Reply from model: HI MAIN!';
+
+    function getSelects(){
+      return filters.map(function(d){
+        return d.type === 'select';
+      });
+    }
+
+    function getNonTrue(){
+      var temp = [];
+      $scope.selects.forEach(function(d){
+        if(d !== true){
+          temp.push(d);
+        }
+      });
+
+      return temp;
+    }
     
     $scope.ok = function () {
-      $modalInstance.close($scope.reply);
+      $scope.selectedFilters = getNonTrue();
+      
+      console.log($scope.selectedFilters);
+      $modalInstance.close($scope.selectedFilters);
     };
 
     $scope.cancel = function () {

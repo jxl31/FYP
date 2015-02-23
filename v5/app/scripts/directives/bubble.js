@@ -15,16 +15,34 @@ angular.module('myappApp')
 					scope.processedData;
 					scope.universities = [];
 					scope.filters = [{
-							name: 'Number of times co-authored',
-							label: 'No. Times',
-							value: 0
-						}, {
-							name: 'Similar Discipline',
-							label: 'Similar Discipline',
-							value: []
-						}];
+						name: 'Date Co-Authored',
+						type: 'select',
+						values: getDates()
+					},{
+						name: 'Number of times co-authored:',
+						type: 'select',
+						values: [{
+							label: '1-5', 
+							value: '1-5', 
+							filterLabel: 'No. Times: ', 
+							filterType: 'freq'
+						},
+						{
+							label: '6-10', 
+							value: '6-10', 
+							filterLabel: 'No. Times: ', 
+							filterType: 'freq'
+						},
+						{
+							label: '11-15', 
+							value: '11-15', 
+							filterLabel: 'No. Times: ', 
+							filterType: 'freq'
+						}]
+					}];
 
 					scope.selectedFilters = [];
+					var svg, legend, tBody;
 					var el = $('.bubble-visualisation-container')[0];
 					var diameter = $('.visualisation-panel').width()-200,
 						margin = {
@@ -52,7 +70,7 @@ angular.module('myappApp')
 					//     .on('dragend', dragended);
 
 
-					processData(scope.authorData, function(processedData){
+					processData(scope.authorData.coauthors, function(processedData){
 						console.log(scope.universities);
 						scope.processedData = processedData;
 						var tip = d3.tip()
@@ -68,7 +86,7 @@ angular.module('myappApp')
 								else if(d.x >= diameter*.5 && d.y >= diameter*.5) return 'w'; //bottom-right corner, tooltip appears on the left
 							});
 
-						var svg = d3.select(el).append('svg')
+						svg = d3.select(el).append('svg')
 						    .attr('width', diameter + margin.left + margin.right)
 						    .attr('height', diameter + margin.top + margin.bottom)
 						    .attr('transform', 'translate(' + margin.left + ',' + margin.right + ')')
@@ -136,11 +154,11 @@ angular.module('myappApp')
 						//node.call(drag);
 
 						//Legend
-					 	var legend = d3.select('#legend-bubble').append('table')
+					 	legend = d3.select('#legend-bubble').append('table')
 									.attr('class','legend');
 
 						var tBodyTitle = legend.append('tbody');
-						var tBody = legend.append('tbody');
+						tBody = legend.append('tbody');
 
 						var tButton = $('<button/>', {
 							text: 'Legend',
@@ -153,16 +171,90 @@ angular.module('myappApp')
 						var tTitle = $('#legend-bubble').children('table').children('tbody:first-child').append(tButton);
 
 						// create one row per segment.
-				        var tr = tBody.selectAll("tr").data(scope.universities).enter().append("tr");
+				        var tr = tBody.selectAll('tr').data(scope.universities).enter().append('tr');
 				            
 				        // create the first column for each segment.
-				        tr.append("td").append("svg").attr("width", '16').attr("height", '16').append("rect")
-				            .attr("width", '16').attr("height", '16')
-							.attr("fill",function(d,i){ return color(i); });
+				        tr.append('td').append('svg').attr('width', '16').attr('height', '16').append('rect')
+				            .attr('width', '16').attr('height', '16')
+							.attr('fill',function(d,i){ return color(i); });
 
 						// create the second column for each segment.
-					    tr.append("td").text(function(d){ return d;});
+					    tr.append('td').text(function(d){ return d;});
 					});
+
+					function updateViz(){	
+						var filteredData;
+
+						scope.selectedFilters.forEach(function(filter){
+							if(filter.filterType === 'date'){
+								filteredData = filterByDate(filter.value);
+							}
+						});
+
+						processData(filteredData, function(data){
+							var node = svg.selectAll('.node')
+						        .data(
+						            bubble.nodes(classes(data)).filter(function (d){return !d.children;}),
+						            function(d) {return d.child} // key data based on className to keep object constancy
+						        );
+							var nodeEnter = node.enter()
+						        .append('g')
+						        .attr('class', 'node')
+						        .attr('transform', function (d) {
+						            return 'translate(' + d.x + ',' + d.y + ')';
+					        	});
+
+					        nodeEnter
+						        .append('circle')
+						        .attr('r', function (d) {return d.r;})
+						        .style('fill', function (d, i) {
+						        	return color($.inArray(d.university, scope.universities));
+						        });
+
+
+					        node.select('circle')
+						        .transition().duration(1000)
+						        .attr('r', function (d) {
+						            return d.r;
+						        })
+						        .style('fill', function (d, i) {
+						            return color($.inArray(d.university, scope.universities));
+						        });
+
+						    node.transition().attr('class', 'node')
+						        .attr('transform', function (d) {
+						        	return 'translate(' + d.x + ',' + d.y + ')';
+						    	});
+
+						   	var tr = tBody.selectAll('tr').data(scope.universities);
+						   	var trEnter = tr.enter().append('tr');
+						   	// create the first column for each segment.
+					        trEnter.append('td').append('svg').attr('width', '16').attr('height', '16').append('rect')
+					            .attr('width', '16').attr('height', '16')
+								.attr('fill',function(d,i){ return color(i); });
+
+							// create the second column for each segment.
+						    trEnter.append('td').text(function(d){ return d;});
+
+						    tr.exit().remove();
+						    node.exit().remove();
+
+						});
+					}
+
+					function filterByDate(fDate){
+						var temp = [];
+						scope.authorData.coauthors.forEach(function(author){
+							author.dates.forEach(function(date){
+								if(fDate === date){
+									temp.push(author);
+									return;
+								}
+							});
+						});
+
+						return temp;
+					}
 
 					/*
 						HTML for the tooltip
@@ -187,9 +279,9 @@ angular.module('myappApp')
 					//   tempRadius = d.r;
 					//   console.log('tempRadius before drag: ' + tempRadius);
 					//   d3.select(this).selectAll('circle').transition()
-					//       .ease("elastic")
+					//       .ease('elastic')
 					//       .duration(600)
-					//       .attr("r", d.r + 25);
+					//       .attr('r', d.r + 25);
 	    //   			}
 					
 					// function dragged(d) {
@@ -205,7 +297,7 @@ angular.module('myappApp')
 					//   d3.select(this).selectAll('circle').transition()
 					//       .ease('elastic')
 					//       .duration(600)
-					//       .attr("r", tempRadius);
+					//       .attr('r', tempRadius);
 					// }
 
 					// function nozoom() {
@@ -216,21 +308,39 @@ angular.module('myappApp')
 						Modal for creating filters
 					*/
 					scope.openFilterModal = function(size){
+						var messageFromBubblejs = 'Hello';
 						var modalInstance = $modal.open({
 					      templateUrl: 'bubble_filter.html',
 					      controller: 'BubbleModalCtrl',
 					      size: size,
 					      resolve: {
-					        message: function () {
-					          return scope.messageFromBubblejs;
+					        filters: function () {
+					          return scope.filters;
 					        }
 					      }
 					    });
 
 					    modalInstance.result.then(function (reply) {
-					      scope.reply = reply;
+					    	if(scope.selectedFilters.length === 0){
+					    		scope.selectedFilters = reply;
+					    	} else {
+					    		reply.forEach(function(newFilter){
+					    			scope,selectedFilters.forEach(function(oldFilter,i){
+					    				if(newFilter.type === oldFilter.type){
+					    					if(newFilter.value === oldFilter.value){
+					    						return;
+					    					} else {
+					    						scope.selectedFilters[i] = newFilter;
+					    					}
+					    				}
+					    			});
+					    		});
+					    	}
+
+					    	console.log(scope.selectedFilters);
+						    updateViz();
 					    }, function () {
-					      console.log('Modal dismissed at: ' + new Date());
+					    	console.log('Modal dismissed at: ' + new Date());
 					    });
 					}
 
@@ -248,21 +358,49 @@ angular.module('myappApp')
 					    				university: node.university, 
 					    				fname: node.fname,
 					    				lname: node.lname,
-					    				key: node.key});
+					    				key: node.key,
+					    				link: node.link});
 					  }
 
 					  recurse(null, root);
 					  return {children: classes};
 					}
 
+
+					//Selects
+					function getDates (){
+						var dates = [];
+						scope.authorData.coauthors.forEach(function(author){
+							author.dates.forEach(function(date){
+								if(dates.length === 0){
+									dates.push({ label: date, 
+										value: date, 
+										filterLabel: 'Date CoAuthored: ',
+										filterType: 'date'
+									});
+								} else {
+									for(var i =0; i < dates.length; i++){
+										if(dates[i].value === date) return;
+									}
+									dates.push({ label: date, value: date, filterLabel: 'Date CoAuthored: ', filterType: 'date'});
+								}
+							});
+						});
+						console.log(dates);
+
+						return dates;
+					}
+
+
 					/*
 						Prepare data for bubble chart
 					*/
 					function processData(data, callback){
+						scope.universities = [];
 						var temp = {};
 						console.log(data);
-						temp['name'] = data.authorName;
-						temp['children'] = data.coauthors.map(function(d){
+						temp['name'] = scope.authorData.authorName;
+						temp['children'] = data.map(function(d){
 							return {
 								name: d.name,
 								children: null,
@@ -276,7 +414,7 @@ angular.module('myappApp')
 							}
 						});
 
-						data.coauthors.forEach(function(d){
+						data.forEach(function(d){
 							if($.inArray(d.university,scope.universities) < 0)
 								scope.universities.push(d.university);
 						})
