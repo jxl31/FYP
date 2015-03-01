@@ -83,38 +83,42 @@ angular.module('myappApp')
 						if(scope.indexes === undefined){
 							scope.data.keywords.forEach(function(d){
 								console.log(d.docTitle);
-								var docLength = d.docKeywords.length;
-								for(var i = 0; i < max; i++){
-									if(i < docLength){
-										if(!ifSimilarWords(tempWords, d.docKeywords[i].text)){
-											tempWords.push({
-												text: d.docKeywords[i].text, 
-												size: 5 + d.docKeywords[i].relevance * wScale,
-												from: d.docTitle 
-											});
+								if(d.docKeywords !== undefined){
+									var docLength = d.docKeywords.length;
+									for(var i = 0; i < max; i++){
+										if(i < docLength){
+											if(!ifSimilarWords(tempWords, d.docKeywords[i].text)){
+												tempWords.push({
+													text: d.docKeywords[i].text, 
+													size: 5 + d.docKeywords[i].relevance * wScale,
+													from: d.docTitle 
+												});
+											}
+										} else {
+											return;
 										}
-									} else {
-										return;
 									}
 								}
-							})
+							});
 						} else {
 							for(var i = 0; i < scope.indexes.length; i++){
 								for(var j = 0; j < scope.data.keywords.length; j++){
 									if(scope.indexes[i] === scope.data.keywords[j].docTitle){
-										var docLength = scope.data.keywords[j].docKeywords.length;
-										for(var x = 0; x < max ; x++){
-											if(x < docLength){
-												//console.log('x:' + x + ', l:' + scope.data.keywords[j].docKeywords.length);
-												if(!ifSimilarWords(tempWords, scope.data.keywords[j].docKeywords[x].text)){
-													tempWords.push({
-														text: scope.data.keywords[j].docKeywords[x]['text'],
-														size: 5 + scope.data.keywords[j].docKeywords[x].relevance * wScale, 
-														from: scope.data.keywords[j].docTitle
-													});
+										if(scope.data.keywords[j].docKeywords !== undefined){
+											var docLength = scope.data.keywords[j].docKeywords.length;
+											for(var x = 0; x < max ; x++){
+												if(x < docLength){
+													//console.log('x:' + x + ', l:' + scope.data.keywords[j].docKeywords.length);
+													if(!ifSimilarWords(tempWords, scope.data.keywords[j].docKeywords[x].text)){
+														tempWords.push({
+															text: scope.data.keywords[j].docKeywords[x]['text'],
+															size: 5 + scope.data.keywords[j].docKeywords[x].relevance * wScale, 
+															from: scope.data.keywords[j].docTitle
+														});
+													}
+												}else{
+													break;
 												}
-											}else{
-												break;
 											}
 										}
 									}

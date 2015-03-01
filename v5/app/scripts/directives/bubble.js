@@ -184,12 +184,15 @@ angular.module('myappApp')
 
 					function updateViz(){	
 						var filteredData;
-
-						scope.selectedFilters.forEach(function(filter){
-							if(filter.filterType === 'date'){
-								filteredData = filterByDate(filter.value);
-							}
-						});
+						if(scope.selectedFilters.length === 0){
+							filteredData = scope.authorData.coauthors;
+						} else {
+							scope.selectedFilters.forEach(function(filter){
+								if(filter.filterType === 'date'){
+									filteredData = filterByDate(filter.value);
+								}
+							});
+						}
 
 						processData(filteredData, function(data){
 							var node = svg.selectAll('.node')
@@ -211,6 +214,10 @@ angular.module('myappApp')
 						        	return color($.inArray(d.university, scope.universities));
 						        });
 
+						    nodeEnter.append('text')
+		      					.attr('dy', '.3em')
+							    .style('text-anchor','middle')
+							    .text(function(d) { return d.child.substring(0, d.r / 4); });
 
 					        node.select('circle')
 						        .transition().duration(1000)
@@ -226,6 +233,7 @@ angular.module('myappApp')
 						        	return 'translate(' + d.x + ',' + d.y + ')';
 						    	});
 
+						    tBody.selectAll('tr').remove();
 						   	var tr = tBody.selectAll('tr').data(scope.universities);
 						   	var trEnter = tr.enter().append('tr');
 						   	// create the first column for each segment.
@@ -234,11 +242,11 @@ angular.module('myappApp')
 								.attr('fill',function(d,i){ return color(i); });
 
 							// create the second column for each segment.
-						    trEnter.append('td').text(function(d){ return d;});
+						    trEnter.append('td').text(function(d){ 
+						    	return d;
+						    });
 
-						    tr.exit().remove();
 						    node.exit().remove();
-
 						});
 					}
 
@@ -325,7 +333,7 @@ angular.module('myappApp')
 					    		scope.selectedFilters = reply;
 					    	} else {
 					    		reply.forEach(function(newFilter){
-					    			scope,selectedFilters.forEach(function(oldFilter,i){
+					    			scope.selectedFilters.forEach(function(oldFilter,i){
 					    				if(newFilter.type === oldFilter.type){
 					    					if(newFilter.value === oldFilter.value){
 					    						return;
@@ -343,6 +351,20 @@ angular.module('myappApp')
 					    	console.log('Modal dismissed at: ' + new Date());
 					    });
 					}
+
+					/*
+						Removing Filters
+					*/
+					scope.removeFilter = function(filterToBeRemoved){
+						scope.selectedFilters.forEach(function(filter,i,array){
+							if(filterToBeRemoved.filterType === filter.filterType){
+								array.splice(i,1);
+							}
+						});
+
+						updateViz();
+					}
+
 
 					/*
 						Process each node so that it will target parent

@@ -19,7 +19,7 @@ angular.module('myappApp')
 					width = $('.visualisation-panel').width(),
 					height = 400;
 
-				var parseDate = d3.time.format('%m/%Y').parse;
+				var parseDate = d3.time.format('%Y').parse;
 
 				//x axis
 				var x = d3.time.scale()
@@ -49,6 +49,7 @@ angular.module('myappApp')
 
 				processData(function(){
 					scope.data.trendData.forEach(function(d){
+						console.log(d);
 						d.tDate = parseDate(d.date);
 					});
 					//Setting up how far the data will go to the top and from the side so
@@ -129,21 +130,21 @@ angular.module('myappApp')
 					docs.forEach(function(d,i){
 						if(i === 0){
 							tempData.push({
-								date: d.publication_date,
+								date: d.publication_date.match('\\d+[/\\-](\\d+)')[1],
 								amount: 1,
 								titles: [d.title],
 								indexes: [i]
 							});
 						} else {
 							for(var y = 0; y < tempData.length; y++){
-								if(tempData[y].date === d.publication_date){
+								if(tempData[y].date === d.publication_date.match('\\d+[/\\-](\\d+)')[1]){
 									tempData[y].amount++;
 									tempData[y].titles.push(d.title);
 									tempData[y].indexes.push(i);
 									return;
 								} else if(y+1 === tempData.length){
 									tempData.push({
-										date: d.publication_date,
+										date: d.publication_date.match('\\d+[/\\-](\\d+)')[1],
 										amount : 1,
 										titles: [d.title],
 										indexes: [i]

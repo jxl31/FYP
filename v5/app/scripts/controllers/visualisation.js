@@ -44,6 +44,7 @@ angular.module('myappApp')
         var promiseA = AuthorAPI.getAuthorFromDiscipline(fullname, link);
         promiseA.then(function(data){
           $scope.author = data;
+          $rootScope.author = data;
           $scope.author['link'] = link;
           $scope.loaded = true;
           $scope.currentPath = '/author/'+fullname+'/'+link+'/';
@@ -51,6 +52,7 @@ angular.module('myappApp')
       } else {
         var promiseA = AuthorAPI.getAuthor(fname,lname,conceptKey);
         promiseA.then(function(data){
+          $rootScope.author = data;
           $scope.author = data;
           $scope.loaded = true;
           $scope.currentPath = '/author/'+fname+'/'+lname+'/'+ conceptKey + '/';

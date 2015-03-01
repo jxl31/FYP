@@ -4,7 +4,7 @@
 	<button class="btn btn-primary" type="button" data-ng-repeat="filter in selectedFilters">
 	  {{ filter.filterLabel }} 
 	  	<span class="badge"> {{filter.value}} </span> 
-	  	<span class="badge"><i class="glyphicon glyphicon-remove"></i></span>
+	  	<span class="badge"><i class="glyphicon glyphicon-remove" data-ng-click="removeFilter(filter)"></i></span>
 	</button>
 </div>
 <div class="bubble-visualisation-container">
