@@ -7,8 +7,8 @@ angular.module('myappApp')
     ];
 
     
-    $('.header > ul > li').click(function() {
-      $('.header > ul > li').not(this).removeClass('active');
-      $(this).toggleClass('active');
+    var headerButtons = $('div.header').children('ul').children('li');
+    headerButtons.each(function(i,button){
+      if($(button).hasClass('active')) $(button).toggleClass('active');
     });
   });

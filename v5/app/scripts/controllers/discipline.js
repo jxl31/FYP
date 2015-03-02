@@ -23,12 +23,6 @@ angular.module('myappApp')
         {name: 'Publications', visualisations: [
           {label: 'Trend Graph', value: 'publications-trend'},
           {label: 'Word Cloud', value: 'publications-word'},
-        ]},
-        {name: 'Discipline', visualisations: [
-          {label: 'Pie Chart', value: 'discipline-piechart'},
-          {label: 'Bar Chart', value: 'discipline-barchart'},
-          {label: 'Bubble Graph', value: 'discipline-bubble'},
-          {label: 'Word Cloud', value: 'discipline-word'}
         ]}
       ];
 

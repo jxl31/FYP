@@ -1,3 +1,6 @@
+<h1>{{ authorData.authorName }}: {{ viz.title }} 
+	<span class="year" data-ng-if="to !== null">({{ from }} -  {{ to }})<span>
+</h1>
 <div class="bubble-filter-container">
 	<button class="btn btn-success" data-ng-click="openFilterModal()">Add Filter <span class="glyphicon glyphicon-filter"></span></button>
 	<div ng-include="'views/modals/bubble_filter.html'"></div>

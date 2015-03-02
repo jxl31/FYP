@@ -23,12 +23,6 @@ angular.module('myappApp')
         {name: 'Publications', visualisations: [
           {label: 'Trend Graph', value: 'publications-trend'},
           {label: 'Word Cloud', value: 'publications-word'},
-        ]},
-        {name: 'Discipline', visualisations: [
-          {label: 'Pie Chart', value: 'discipline-piechart'},
-          {label: 'Bar Chart', value: 'discipline-barchart'},
-          {label: 'Bubble Graph', value: 'discipline-bubble'},
-          {label: 'Word Cloud', value: 'discipline-word'}
         ]}
     ];
 
@@ -44,7 +38,7 @@ angular.module('myappApp')
   	};
 
     $scope.clicked = function(oAuthor){
-      var path = '/author/'+oAuthor.fname+'/'+oAuthor.lname+'/'+oAuthor.key+'/'+$rootScope.topics[0].visualisations[1].value;
+      var path = '/author/'+oAuthor.fname+'/'+oAuthor.lname+'/'+oAuthor.key+'/'+$rootScope.topics[0].visualisations[3].value;
       $location.path(path);
     };
 

@@ -25,19 +25,19 @@
 
     <!-- Add your site or application content here -->
     <div class="container">
-      <div class="header">
-        <ul class="nav nav-pills pull-right">
+      <div class="header custom-header">
+        <ul class="nav nav-pills pull-right custom-buttons">
           <li class="active"><a ng-href="#/">Home</a></li>
           <li><a ng-href="#/about">About</a></li>
           <li><a ng-href="#/contact">Contact</a></li>
         </ul>
-        <h3 class="text-muted">Visualization of DIT Arrow</h3>
+        <h3 class="text-muted title-app">Visualisation of DIT Arrow</h3>
       </div>
 
       <div class="main" ng-view=""></div>
 
       <div class="footer">
-        <p>John Xaviery Lucente</p>
+        <p class="footer-author">Developed By: John Xaviery Lucente</p>
       </div>
     </div>
 
@@ -72,6 +72,7 @@
     <script src="bower_components/d3/d3.js"></script>
     <script src="bower_components/d3pie/d3pie.js"></script>
     <script src="bower_components/d3-tip/index.js"></script>
+    <script src="bower_components/d3-cloud/d3.layout.cloud.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
 
@@ -103,7 +104,7 @@
     <!-- End Services -->
 
     <!-- Custom Filters -->
-    <script src="scripts/filters/authorFilter.js"></script>
+    <script src="scripts/filters/searchFilters.js"></script>
     <!-- End Custom Filters -->
 
     <!-- endbuild -->

@@ -1,3 +1,5 @@
+
+
 .author-box-container{
 	width: auto;
 	display: inline;
@@ -9,7 +11,7 @@
 }
 
 .author-box-container-1{
-	max-height: 545px;
+	max-height: 583px;
 	overflow-y: auto;
 }
 

@@ -49,30 +49,52 @@
 	font-size: 2em;
 }
 
+/*
+	Custom Tooltip
+*/
 .d3-tip {
 	line-height: 2;
 	font-weight: bold;
-	padding: 12px;
-	background: rgba(0, 0, 0, 0.8);
-	color: #fff;
+	padding: 0px;
+	background: #fff;
+	color: #000;
 	border-radius: 2px;
-	width: 300px;
-	overflow: hidden;
+	width: 350px;
+	max-width: 500px;
+	max-height: 450px;
+	overflow-x: auto;
+	border-radius: 5px;
+}
+
+.d3-tip > .panel{
+	margin-bottom: 0px;
 	white-space: nowrap;
-	text-overflow: ellipsis;
+}
+
+.tooltip-title-list{
+	max-height: 300px;
+	overflow-y: auto;
+}
+.tooltip-title-list > li{
+	white-space: normal;
+}
+
+.tooltip-trend{
+	width: 500px !important;
+	max-width: 500px;
 }
 /*arrow*/
-.d3-tip:after {
+/*.d3-tip:after {
   box-sizing: border-box;
   display: inline;
   font-size: 10px;
   width: 100%;
   line-height: 1;
-  color: rgba(0, 0, 0, 0.8);
-  content: "\25BC";
+  color: #9FA0ED;
+  content: '\25B6';
   position: absolute;
   text-align: center;
-}
+}*/
 
 /* Style northward tooltips differently */
 .d3-tip.n:after {
@@ -84,12 +106,28 @@
 /*Legend*/
 .legend{
 	position: absolute;
+	top: 60px;
 	right:-90px;
     display:inline-block;
     border-collapse: collapse;
     border-spacing: 0px;
     max-width: 250px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 5px 5px 2px;
+    border: 1px solid;
 }
+
+.legend.closed{
+	right: 15px;
+	border: 0px;
+	box-shadow: none;
+	-webkit-transition: all 1s ease;
+    -moz-transition: all 1s ease;
+    -o-transition: all 1s ease;
+    transition: all 1s ease;
+}
+
 .legend td{
     padding:4px 5px;
     vertical-align:middle;
@@ -104,5 +142,17 @@
 
 .legend-color-td{
 	text-align: center;
+	vertical-align: middle;
+}
+
+.legend-button{
+	border-radius: 0px;
+}
+
+/*
+	Custom Visualisation Title
+*/
+.year{
+	font-size: .6em;
 	vertical-align: middle;
 }

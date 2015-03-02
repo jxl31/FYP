@@ -13,7 +13,9 @@ angular.module('myappApp')
 
 				var pie = new d3pie(iElement[0],{
 								size: {
-									canvasWidth: 700
+									canvasWidth: 700,
+									canvasHeight: 700,
+									pieOuterRadius: 220
 								},
 								header: {
 									title: {
@@ -35,7 +37,7 @@ angular.module('myappApp')
 								},
 								data:{
 									content: scope.data.map(function(d){
-												return {label: d.name, value: d.count};
+												return {label: d.name.substring(0, 40 / 4), value: d.count};
 											})
 								}
 							});

@@ -1,29 +1,40 @@
 'use strict';
 
 angular.module('myappApp')
-	.directive('customTrend', ['$modal','$location','$rootScope',function ($modal,$location,$rootScope) {
+	.directive('customTrend', ['$modal','$location','$rootScope','$window',function ($modal,$location,$rootScope,$window) {
 		return {
 			restrict: 'EA',
 			templateUrl: 'views/visualisation/trend.html',
 			scope: {
 				data: '=',
 				change: '&',
+				viz: '='
 			},
 			link: function (scope, iElement, iAttrs) {
-					var margin = {
-							top: 100,
-							right: 20,
-							bottom: 50,
-							left: 70
-						},
-					width = $('.visualisation-panel').width(),
-					height = 400;
+				var margin = {
+						top: 50,
+						right: 20,
+						bottom: 50,
+						left: 70
+					},
+				width = $('.trend-visualisation-container').width(),
+				height = 450;
+				var tip;
+				scope.dates = getDates();
+				var firstClick = true;
+
+				scope.to = d3.max(scope.dates, function(d){
+					return parseInt(d);
+				});
+				scope.from = d3.min(scope.dates, function(d){
+					return parseInt(d);
+				});
 
 				var parseDate = d3.time.format('%Y').parse;
 
 				//x axis
 				var x = d3.time.scale()
-    					.range([0, width]);
+    					.range([0, width - margin.left - margin.right]);
 
     			var xAxis = d3.svg.axis()
 					    .scale(x)
@@ -41,7 +52,8 @@ angular.module('myappApp')
 				    .x(function(d) { return x(d.tDate); })
 				    .y(function(d) { return y(d.amount); });
 
-				var svg = d3.select(iElement[0]).append('svg')
+				var el = $('.trend-visualisation-container')[0];
+				var svg = d3.select(el).append('svg')
 				    .attr('width', width + margin.left + margin.right)
 				    .attr('height', height + margin.top + margin.bottom)
 				  .append('g')
@@ -49,7 +61,6 @@ angular.module('myappApp')
 
 				processData(function(){
 					scope.data.trendData.forEach(function(d){
-						console.log(d);
 						d.tDate = parseDate(d.date);
 					});
 					//Setting up how far the data will go to the top and from the side so
@@ -73,9 +84,13 @@ angular.module('myappApp')
 				      .attr('d', line);
 
 				   	//initialize tooltip
-				   	var tip = d3.tip()
-						.attr('class', 'd3-tip')
-						.offset([-5,0])
+				   	tip = d3.tip()
+						.attr('class', 'd3-tip tooltip-trend')
+						.offset([0,-10])
+						.direction(function(d){
+							if(y(d.amount) < height * .4) return 's';
+							else return 'n';
+						})
 						.html(function(d) {
 						    return constructTooltipHTML(d);
 						});
@@ -110,11 +125,15 @@ angular.module('myappApp')
 					  .attr('fill', 'white')
 					  .attr('stroke', 'steelblue')
 					  .attr('stroke-width', '3')
-					  .on('mouseover', function(d){
+					  .style('cursor', 'pointer')
+					  .on('click', function(d){
+					  	firstClick = true;
 					  	tip.show(d);
 					  })
-					  .on('mouseout', tip.hide)
-					  .on('click', function(d){ goToCloudGraph(d); });
+					  .on('dblclick', function(d){ 
+					  	tip.hide(d);
+					  	goToCloudGraph(d);
+					  });
 				});
 
 				
@@ -161,25 +180,58 @@ angular.module('myappApp')
 				}
 
 				function constructTooltipHTML(d){
-					var htmlToBeReturned = ''
-					var titles = '<strong><b>Titles: </b></strong><br>';
-					var amount = '<strong><b>Amount: </b></strong>';
-					var date = '<strong><b>Date: </b></strong>';
+					var heading = d.date;
+					var amount = d.amount;
+					console.log(d);
 
+					var titles = '<ul class="tooltip-title-list">';
 					d.titles.forEach(function(data){
-						titles += data + '<br>'
+						titles += '<li> ' + data + '</li>'
 					});
+					titles+= '</ul>'
 
-					amount += d.amount+ '<br>';
-					date += d.date + '<br>';
+					var html = 
+						'<div class="panel panel-primary tooltip-trend">' + 
+							'<div class="panel-heading">' +
+								heading +
+							'</div>' +
+							'<div class="panel-body">' + 
+								'<strong>Publication Titles: </strong><br>' + 
+								titles +
+								'<strong>Number of Publications: </strong>' +
+								amount +
+							'</div>' 
+						' </div>';
 
-					htmlToBeReturned = titles + amount + date;
 
-					return htmlToBeReturned
+					return html;
 				}
 
-				function getAmountDoc(date){
+				function getDates (){
+					var dates = [];
+					scope.data.coauthors.forEach(function(author){
+						author.dates.forEach(function(date){
+							if(dates.length === 0){
+								dates.push(date);
+							} else {
+								for(var i =0; i < dates.length; i++){
+									if(dates[i].value === date) return;
+								}
+								dates.push(date);
+							}
+						});
+					});
+					return dates;
+				}
 
+				$window.onclick = function(){
+					var jTip = $('.d3-tip');
+					if(!firstClick){
+						console.log(jTip);
+						tip.hide();
+					} else {
+						firstClick = false;
+					}
 				}
 
 			}

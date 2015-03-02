@@ -1,14 +1,32 @@
 /* Space out content a bit */
 body {
-  padding-top: 20px;
+  background-color: #3A9DD8;
+  border-top: 20px;
   padding-bottom: 20px;
+}
+
+.main {
+  border-radius: 5px;
+  background-color: #fff;
+  box-shadow: 2px 2px 1px;
 }
 
 /* Everything but the jumbotron gets side spacing for mobile first views */
 .header,
 .footer {
+  vertical-align: center;
   padding-left: 15px;
   padding-right: 15px;
+  color: #fff;
+}
+
+
+.custom-header{
+  box-shadow: 2px 2px 1px #000;
+  color: #fff;
+  background-color: #449d44;
+  border-color: #398439;
+  border-bottom-right-radius: 5px;
 }
 
 /* Custom page header */
@@ -20,6 +38,43 @@ body {
   padding-bottom: 19px;
 }
 
+
+.title-app{
+  color: #fff;
+  padding-left: 20px;
+  padding-top: 10px;
+}
+
+.custom-buttons{
+  padding-top: 10px;
+  padding-right: 10px;
+}
+
+.custom-buttons > li > a{
+  color: #fff;
+}
+
+.nav-pills > li > a,
+.nav > li > a {
+  background-color: #3F913F !important;
+}
+
+.nav-pills > li.active > a :active,
+.nav > li > a:active{
+  background-color: #01243A !important;
+}
+
+.nav-pills > li.active > a :focus,
+.nav > li > a:focus{
+  background-color: #01243A !important;
+}
+
+.nav-pills > li.active > a :hover,
+.nav > li > a:hover{
+  background-color: #134464 !important;
+}
+
+
 /* Custom page footer */
 .footer {
   padding-top: 19px;
@@ -27,6 +82,11 @@ body {
   border-top: 1px solid #e5e5e5;
 }
 
+.footer-author{
+  font-family: 'Open Sans 700', serif;
+  font-size: 1.5em;
+  color: #fff;
+}
 .btn-main-selection{
   width: 60%;
 }
@@ -40,6 +100,17 @@ body {
 .loading img{
   width: 300px;
   height: 300px;
+}
+
+/*
+  Accordion
+*/
+a[class=accordion-toggle] > span{
+  color: #fff;
+}
+.accordion > .panel-heading{
+  background-color: #449d44;
+  border-color: #398439;
 }
 
 

@@ -1,29 +1,27 @@
 'use strict';
 
 angular.module('myappApp')
-  .controller('MainVisCtrl', function ($scope, $routeParams, AuthorAPI, $rootScope, $location) {
+  .controller('MainVisCtrl', function ($scope, $routeParams, AuthorAPI, $rootScope, $location, $route, $templateCache) {
     $scope.awesomeThings = [
       'HTML5 Boilerplate',
       'AngularJS',
       'Karma'
     ];
 
+    $scope.reloadRoute = function(){
+      $route.reload();
+    }
+
     $rootScope.topics = [
         {name: 'Co-Author', visualisations: [
-          {label: 'Co-Authors (Pie)', value: 'coauthor-piechart'},
-          {label: 'Co-Authors (Bar)', value: 'coauthor-barchart'},
-          {label: 'Network Graph', value: 'coauthor-network'},
-          {label: 'Bubble Chart', value: 'coauthor-bubble'}
+          {label: 'Co-Authors (Pie)', title: 'Co-Authors' , value: 'coauthor-piechart'},
+          {label: 'Co-Authors (Bar)', title:'Co-Authors',value: 'coauthor-barchart'},
+          {label: 'Network Graph', title:'Co-Authors',value: 'coauthor-network'},
+          {label: 'Bubble Chart', title:'Co-Authors',value: 'coauthor-bubble'}
         ]},
         {name: 'Publications', visualisations: [
-          {label: 'Trend Graph', value: 'publications-trend'},
-          {label: 'Word Cloud', value: 'publications-word'},
-        ]},
-        {name: 'Discipline', visualisations: [
-          {label: 'Pie Chart', value: 'discipline-piechart'},
-          {label: 'Bar Chart', value: 'discipline-barchart'},
-          {label: 'Bubble Graph', value: 'discipline-bubble'},
-          {label: 'Word Cloud', value: 'discipline-word'}
+          {label: 'Trend Graph',title:'Publications', value: 'publications-trend'},
+          {label: 'Word Cloud', title:'Publications\' Keywords', value: 'publications-word'},
         ]}
       ];
 
@@ -70,7 +68,6 @@ angular.module('myappApp')
     });
 
     $scope.toggleLoaded = function(loaded){
-      console.log('Got here');
       $scope.loaded = loaded;
     };
 
@@ -79,12 +76,10 @@ angular.module('myappApp')
         $scope.indexDocsForCloud = docs;
       }
       $scope.selectedViz = viz;
-      console.log($scope.selectedViz);
       setTopic(viz);
     };
 
     $scope.changePath = function changePath(viz){
-      console.log(viz);
       var path = $scope.currentPath+viz.value;
       $location.path(path);
     };
@@ -102,7 +97,6 @@ angular.module('myappApp')
             $rootScope.topics[i].visualisations[j][attr] === value){
             $scope.selectedViz = $rootScope.topics[i].visualisations[j];
             $scope.selectedTopic = $rootScope.topics[i];
-            console.log($scope.selectedTopic);
             return;
           }
         }
@@ -141,7 +135,6 @@ angular.module('myappApp')
 angular.module('myappApp')
   .controller('BubbleModalCtrl', function($scope, $modalInstance, filters){
     $scope.filters = filters;
-    console.log($scope.filters);
 
     $scope.selects = getSelects();
 

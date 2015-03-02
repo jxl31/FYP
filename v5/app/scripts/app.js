@@ -8,12 +8,13 @@
  *
  * Main module of the application.
  */
-angular
+var myApp = angular
   .module('myappApp', [
     'ngAnimate',
     'ngResource',
     'ngRoute',
-    'ui.bootstrap'
+    'ui.bootstrap',
+    'App.filters'
   ])
   .config(function ($routeProvider) {
     $routeProvider

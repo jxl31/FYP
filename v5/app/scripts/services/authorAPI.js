@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('myappApp')
-	.factory('AuthorAPI', ['$http', '$q', 
+	.factory('AuthorAPI', ['$http', '$q', '$route', 
 		function ($http, $q) {
 			var factory = {};
 			var prefix = 'http://localhost:8081/api/';
@@ -20,6 +20,7 @@ angular.module('myappApp')
 			};
 
 			factory.getAuthor = function(fname,lname,key){
+
 				var deferred = $q.defer();
 				var uri = prefix+'author/'+fname+'/'+lname+'/'+key;
 				var url = encodeURI(uri);

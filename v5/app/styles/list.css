@@ -6,8 +6,8 @@
 .discipline-list,
 .author-box-container,
 .discipline-box-container{
-	height: 500px;
-	max-height: 500px;
+	height: 550px;
+	max-height: 550px;
     -webkit-transition: all 0.5s ease;
     -moz-transition: all 0.5s ease;
     -o-transition: all 0.5s ease;
