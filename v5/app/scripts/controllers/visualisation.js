@@ -14,14 +14,14 @@ angular.module('myappApp')
 
     $rootScope.topics = [
         {name: 'Co-Author', visualisations: [
-          {label: 'Co-Authors (Pie)', title: 'Co-Authors' , value: 'coauthor-piechart'},
-          {label: 'Co-Authors (Bar)', title:'Co-Authors',value: 'coauthor-barchart'},
+          {label: 'Pie Chart', title: 'Co-Authors' , value: 'coauthor-piechart'},
+          {label: 'Bar Chart', title:'Co-Authors',value: 'coauthor-barchart'},
           {label: 'Network Graph', title:'Co-Authors',value: 'coauthor-network'},
           {label: 'Bubble Chart', title:'Co-Authors',value: 'coauthor-bubble'}
         ]},
         {name: 'Publications', visualisations: [
-          {label: 'Trend Graph',title:'Publications', value: 'publications-trend'},
-          {label: 'Word Cloud', title:'Publications\' Keywords', value: 'publications-word'},
+          {label: 'Publication Timeline',title:'Publication Timeline', value: 'publications-trend'},
+          {label: 'Publications\' Keywords', title:'Publications\' Keywords', value: 'publications-word'},
         ]}
       ];
 
@@ -80,6 +80,9 @@ angular.module('myappApp')
     };
 
     $scope.changePath = function changePath(viz){
+      if($('.d3-tip') !== null){
+        $('.d3-tip').remove();
+      }
       var path = $scope.currentPath+viz.value;
       $location.path(path);
     };

@@ -98,6 +98,8 @@ body {
 }
 
 .loading img{
+  margin-right: auto;
+  margin-left: auto;
   width: 300px;
   height: 300px;
 }
@@ -113,6 +115,17 @@ a[class=accordion-toggle] > span{
   border-color: #398439;
 }
 
+/*
+  Carousel
+*/
+
+.carousel-custom-caption{
+  color: black;
+}
+
+.carousel-custom-inner{
+  height: 500px;
+}
 
 /* Customize container */
 @media (min-width: 1224px) {
@@ -128,6 +141,7 @@ a[class=accordion-toggle] > span{
 .jumbotron {
   text-align: center;
   border-bottom: 1px solid #e5e5e5;
+  background-color: #fff;
 }
 .jumbotron .btn {
   font-size: 21px;

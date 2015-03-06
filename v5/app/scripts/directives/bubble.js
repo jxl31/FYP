@@ -15,6 +15,7 @@ angular.module('myappApp')
 				link: function (scope, iElement, iAttrs) {
 
 					scope.processedData;
+					scope.currentDate = new Date();
 					scope.universities = [];
 					scope.dates = getDates();
 					scope.selectedYear = null;
@@ -27,33 +28,80 @@ angular.module('myappApp')
 					scope.filters = [{
 						name: 'Date Co-Authored',
 						type: 'select',
-						values: scope.dates
-					},{
-						name: 'Number of times co-authored:',
-						type: 'select',
-						values: [{
-							label: '1-5', 
-							value: '1-5', 
-							filterLabel: 'No. Times: ', 
-							filterType: 'freq'
-						},
-						{
-							label: '6-10', 
-							value: '6-10', 
-							filterLabel: 'No. Times: ', 
-							filterType: 'freq'
-						},
-						{
-							label: '11-15', 
-							value: '11-15', 
-							filterLabel: 'No. Times: ', 
-							filterType: 'freq'
-						},
-						{
-							label: '15 > ',
-							value: '16-500',
-							filterLabel: 'No. Times: ',
-							filterType: 'freq'
+						values: [
+							{
+								label: 'a year ago ('.concat(scope.currentDate.getFullYear()-1,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-1,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 1
+							},
+							{
+								label: 'last 2 years ('.concat(scope.currentDate.getFullYear()-2,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-2,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 2 
+							},
+							{
+								label: 'last 3 years ('.concat(scope.currentDate.getFullYear()-3,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-3,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 3
+							},
+							{
+								label: 'last 4 years ('.concat(scope.currentDate.getFullYear()-4,'-', scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-4,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 4
+							},
+							{
+								label: 'last 5 years ('.concat(scope.currentDate.getFullYear()-5,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-5,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 5
+							},
+							{
+								label: 'last 10 years ('.concat(scope.currentDate.getFullYear()-10,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-10,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 10
+							},
+							{
+								label: 'last 20 years ('.concat(scope.currentDate.getFullYear()-20,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-20,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 20
+							}
+						]}
+						,{
+							name: 'Number of times co-authored:',
+							type: 'select',
+							values: [{
+								label: 'more than once', 
+								value: '1-500', 
+								filterLabel: 'No. Times: ', 
+								filterType: 'freq',
+								sortValue: 1
+							},
+							{
+								label: 'more than five times', 
+								value: '5-500', 
+								filterLabel: 'No. Times: ', 
+								filterType: 'freq',
+								sortValue: 5
+							},
+							{
+								label: 'more than 10 times', 
+								value: '10-500', 
+								filterLabel: 'No. Times: ', 
+								filterType: 'freq',
+								sortValue: 10
 						}]
 					}];
 					scope.selectedFilters = [];
@@ -94,9 +142,6 @@ angular.module('myappApp')
 					    tempRadius;
 
 					var bubble = d3.layout.pack()
-					    .sort(function(a, b) {
-					        return -(a.value - b.value);
-					    })
 					    .size([diameter, diameter])
 					    .padding(1.5);
 
@@ -134,7 +179,7 @@ angular.module('myappApp')
 						    .attr('class', 'bubble')
 						    .call(tip);
 
-						var node = svg.selectAll('.node')
+						var node = svg.selectAll('g.node')
 						      .data(bubble.nodes(classes(scope.processedData))
 						      .filter(function(d) { return !d.children; }))
 						    .enter().append('g')
@@ -167,6 +212,12 @@ angular.module('myappApp')
 							})
 							.duration(1000)
 							.ease('elastic');
+
+						// node.on('mouseover', function(d){
+						// 	tip.show(d);
+						// }).on('mouseout', function(d){
+						// 	tip.hide(d);
+						// })
 
 						node.on('dblclick', function(d){
 							var path = '';
@@ -241,8 +292,6 @@ angular.module('myappApp')
 						} else {
 							processData(filteredData, function(data){
 								svg.select('text').remove();
-								svg.call(tip);
-								svg.selectAll('g.node').remove();
 								var node = svg.selectAll('.node')
 							        .data(
 							            bubble.nodes(classes(data)).filter(function (d){return !d.children;}),
@@ -295,20 +344,17 @@ angular.module('myappApp')
 								});
 
 								node.on('click',function(d){
+									firstClick = true;
 									tempColor = this.style.fill;
 									tip.show(d);
-								})
-								.on('mouseout',function(d){
-									d3.select(this)
-							            .style('opacity', 1)
-							            .style('fill', tempColor);
-							        tip.hide(d);
 								});
 
 							    node.transition().attr('class', 'node')
 							        .attr('transform', function (d) {
 							        	return 'translate(' + d.x + ',' + d.y + ')';
 							    	});
+
+							    node.exit().remove();
 
 							    if($('#legend-bubble > table').is(':empty')){
 							    	tBodyTitle = legend.append('tbody');
@@ -327,8 +373,6 @@ angular.module('myappApp')
 							    trEnter.append('td').text(function(d){ 
 							    	return d;
 							    });
-
-							    node.exit().remove();
 							});
 						}
 					}
@@ -352,6 +396,10 @@ angular.module('myappApp')
 						var count = d.value;
 						var university = d.university;
 						var title = name;
+						var years = d.dates.toString();
+						var find =',';
+						var re = new RegExp(find,'g');
+						var fYears = years.replace(re,', ');
 
 						var html = 
 						'<div class="panel panel-primary">' + 
@@ -359,8 +407,9 @@ angular.module('myappApp')
 								name +
 							'</div>' +
 							'<div class="panel-body">' + 
-								'<strong>University: </strong>' + university + 
-								'<br><strong>Number of ties coauthored: </strong>' + count +
+								'<p><strong class="tooltip-body-title">University: </strong>' + university + 
+								'</p><p><strong class="tooltip-body-title">Number of times coauthored: </strong>' + count +
+								'</p><p><strong class="tooltip-body-title">Years Co-Authored: </strong>' + fYears + '</p>'
 							'</div>' 
 						' </div>';
 
@@ -424,17 +473,25 @@ angular.module('myappApp')
 					    	if(scope.selectedFilters.length === 0){
 					    		scope.selectedFilters = reply;
 					    	} else {
-					    		reply.forEach(function(newFilter){
-					    			scope.selectedFilters.forEach(function(oldFilter,i){
-					    				if(newFilter.type === oldFilter.type){
-					    					if(newFilter.value === oldFilter.value){
-					    						return;
-					    					} else {
-					    						scope.selectedFilters[i] = newFilter;
-					    					}
+					    		for(var i = 0; i < reply.length; i++){
+					    			for(var j = 0; j < scope.selectedFilters.length; j++){
+					    				if(reply[i].filterType === scope.selectedFilters[j]){
+					    					break;
 					    				}
-					    			});
-					    		});
+					    			}
+					    			scope.selectedFilters.push(reply[i]);
+					    		}
+					    		// reply.forEach(function(newFilter){
+					    		// 	scope.selectedFilters.forEach(function(oldFilter,i){
+					    		// 		if(newFilter.filterType === oldFilter.filterType){
+					    		// 			if(newFilter.value === oldFilter.value){
+					    		// 				return;
+					    		// 			} else {
+					    		// 				scope.selectedFilters[i] = newFilter;
+					    		// 			}
+					    		// 		}
+					    		// 	});
+					    		// });
 					    	}
 						    updateViz();
 					    }, function () {
@@ -444,10 +501,11 @@ angular.module('myappApp')
 
 					function filterByDate(fDate, filteredData){
 						var temp = [];
+						var iFDate = parseInt(fDate);
 						if(filteredData === undefined){
 							scope.authorData.coauthors.forEach(function(author){
 								author.dates.forEach(function(date){
-									if(fDate === date){
+									if(iFDate <= date){
 										temp.push(author);
 										return;
 									}
@@ -456,7 +514,7 @@ angular.module('myappApp')
 						} else {
 							filteredData.forEach(function(author){
 								author.dates.forEach(function(date){
-									if(fDate === date){
+									if(iFDate <= date){
 										temp.push(author);
 										return;
 									}
@@ -513,6 +571,7 @@ angular.module('myappApp')
 					  function recurse(name, node) {
 					    if (node.children) node.children.forEach(function(child) { recurse(node.name, child); });
 					    else classes.push({parent: name, 
+					    				dates: node.dates,
 					    				child: node.name, 
 					    				value: node.size, 
 					    				university: node.university, 
@@ -560,6 +619,7 @@ angular.module('myappApp')
 						temp['children'] = data.map(function(d){
 							return {
 								name: d.name,
+								dates: d.dates,
 								children: null,
 								size: d.count,
 								university: d.university,

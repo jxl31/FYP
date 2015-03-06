@@ -16,6 +16,8 @@ angular.module('myappApp')
 			},
 			link: function (scope, iElement, iAttrs) {
 				scope.loading({loaded: false});
+				scope.allDates = getDates();
+				scope.selectedDateFilter = null;
 				var margin = {
 						top: 50,
 						right: 20,
@@ -25,10 +27,18 @@ angular.module('myappApp')
 					width = $('.cloud-visualisation-container').width(),
 					height = 500;
 
-				var color = d3.scale.category20();
+				var color = d3.scale.category20(),
+					svg;
+			    var el = $('.cloud-visualisation-container')[0];
+			    	
+				svg = d3.select(el).append('svg')
+			    		.attr('width',width + margin.left + margin.right)
+						.attr("height", height + margin.top + margin.bottom)
+					.append('g')
+						.attr('transform', "translate(" + [width >> 1, height >> 1] + ")");
 
 			    processData(function(words){
-			    	console.log(words);
+			    	scope.titleDate = getTitleDate(words);
 			    	if(scope.data.processedKeywords === undefined){
 			    		words.forEach(function(d){
 			    			checkWordsForwardSlash(d);
@@ -51,14 +61,36 @@ angular.module('myappApp')
 
 			    });
 
+			    scope.$watch('titleDate', function(n,o){
+			    	if(n !== o){
+			    		console.log(scope.titleDate);
+			    	}
+			    })
+
+			    function updateViz(){
+			    	var filteredData = filterByDate(scope.selectedDateFilter);
+			    	scope.titleDate = scope.selectedDateFilter;
+			    	console.log(filteredData);
+			    	processData(function(words){
+			    		console.log(words);
+			    		svg.selectAll('text').remove();
+			    		d3.layout.cloud()
+				    		.size([width, height])
+							.timeInterval(10)
+							.words(words)
+							.padding(1)
+							.font('Impact')
+							.fontSize(function(d) { return d.size; })
+							.rotate(function() { return ~~(Math.random()*5) * 30 - 70;  })
+							.on('end', draw)
+							.start();
+
+			    	}, filteredData)
+
+			    }
+
 
 			    function draw(words){
-			    	var el = $('.cloud-visualisation-container')[0]
-			    	var svg = d3.select(el).append('svg')
-				    		.attr('width',width + margin.left + margin.right)
-							.attr("height", height + margin.top + margin.bottom)
-						.append('g')
-							.attr('transform', "translate(" + [width >> 1, height >> 1] + ")");
 
 					var word = 
 						svg.selectAll("text")
@@ -74,10 +106,89 @@ angular.module('myappApp')
 					        .text(function(d) { return d.text; });
 			    }
 
-				function processData(callback){
-					console.log(scope.data.keywords);
+			    scope.toggleDate = function(date){
+			    	scope.selectedDateFilter = date;
+			    	updateViz();
+			    }
+
+			    function getDates (){
+					var dates = [];
+					scope.data.coauthors.forEach(function(author){
+						author.dates.forEach(function(date){
+							if(dates.length === 0)
+								dates.push(date); 
+							else if($.inArray(date,dates) === -1)
+								dates.push(date);
+						});
+					});
+
+					return dates;
+				}
+
+			    function getTitleDate(words){
+			    	var title = '';
+			    	var dates = [];
+			    	words.forEach(function(word){
+			    		scope.data.docs.forEach(function(doc){
+			    			if(word.from === doc.title){
+			    				var date = doc.publication_date.match('\\d+[/\\-](\\d+)')[1];
+			    				if(dates.length === 0) dates.push(date);
+			    				else if($.inArray(date, dates) === -1) dates.push(date);
+			    			}
+			    		});
+			    	});
+
+			    	if(dates.length <= 1){
+			    		return title.concat(dates.toString());
+			    	} else {
+			    		var from = d3.min(dates, function(d){
+							return parseInt(d);
+						});
+
+						var to = d3.max(dates, function(d){
+							return parseInt(d);
+						});
+
+						return title.concat(from,'-',to);
+			    	}
+			    }
+
+
+			    function filterByDate (selectedDate){
+			    	var tempWords = [];
+			    	scope.data.docs.forEach(function(doc){
+		    			if(doc.publication_date.match('\\d+[/\\-](\\d+)')[1] === selectedDate){
+		    				scope.data.keywords.forEach(function(keywords){
+		    					if(keywords.docTitle === doc.title){
+		    						keywords.docKeywords.map(function(word){
+		    							tempWords.push({
+		    								text: word.text,
+		    								size: 5 + word.relevance * 30,
+		    								from: keywords.docTitle
+		    							});
+		    						})
+		    					}
+		    				});
+		    			}
+		    		});
+
+		    		return tempWords;
+			    }
+
+
+				function processData(callback, filteredData){
 					var tempWords = [];
-					if(scope.data.processedKeywords === undefined){
+					if(filteredData !== undefined){
+						filteredData.forEach(function(word){
+							if(!ifSimilarWords(tempWords, word.text)){
+								tempWords.push({
+									text: word.text,
+									size: word.size,
+									from: word.from
+								});
+							}
+						});
+					} else if(scope.data.processedKeywords === undefined){
 						var max = scope.data.keywords.length > 10 ? 10 : 30;
 						var wScale = max === 30 ? 45 : 20; 
 						if(scope.indexes === undefined){

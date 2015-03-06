@@ -16,6 +16,7 @@ angular.module('myappApp')
 				var width = $('.visualisation-panel').width(),
 					height = 600;
 				scope.dates = getDates();
+				scope.currentDate = new Date();
 				scope.to = d3.max(scope.dates, function(d){
 					return parseInt(d.value);
 				});
@@ -48,27 +49,80 @@ angular.module('myappApp')
 			  	scope.filters = [{
 						name: 'Date Co-Authored',
 						type: 'select',
-						values: scope.dates
-					},{
-						name: 'Number of times co-authored:',
-						type: 'select',
-						values: [{
-							label: '1-5', 
-							value: '1-5', 
-							filterLabel: 'No. Times: ', 
-							filterType: 'freq'
-						},
-						{
-							label: '6-10', 
-							value: '6-10', 
-							filterLabel: 'No. Times: ', 
-							filterType: 'freq'
-						},
-						{
-							label: '11-15', 
-							value: '11-15', 
-							filterLabel: 'No. Times: ', 
-							filterType: 'freq'
+						values: [
+							{
+								label: 'a year ago ('.concat(scope.currentDate.getFullYear()-1,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-1,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 1
+							},
+							{
+								label: 'last 2 years ('.concat(scope.currentDate.getFullYear()-2,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-2,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 2 
+							},
+							{
+								label: 'last 3 years ('.concat(scope.currentDate.getFullYear()-3,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-3,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 3
+							},
+							{
+								label: 'last 4 years ('.concat(scope.currentDate.getFullYear()-4,'-', scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-4,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 4
+							},
+							{
+								label: 'last 5 years ('.concat(scope.currentDate.getFullYear()-5,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-5,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 5
+							},
+							{
+								label: 'last 10 years ('.concat(scope.currentDate.getFullYear()-10,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-10,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 10
+							},
+							{
+								label: 'last 20 years ('.concat(scope.currentDate.getFullYear()-20,'-',scope.currentDate.getFullYear(),')'),
+								value: scope.currentDate.getFullYear()-20,
+								filterLabel: 'Date Co-Authored',
+								filterType: 'date',
+								sortValue: 20
+							}]
+						}
+						,{
+							name: 'Number of times co-authored:',
+							type: 'select',
+							values: [{
+								label: 'more than once', 
+								value: '1-500', 
+								filterLabel: 'No. Times: ', 
+								filterType: 'freq',
+								sortValue: 1
+							},
+							{
+								label: 'more than five times', 
+								value: '5-500', 
+								filterLabel: 'No. Times: ', 
+								filterType: 'freq',
+								sortValue: 5
+							},
+							{
+								label: 'more than 10 times', 
+								value: '10-500', 
+								filterLabel: 'No. Times: ', 
+								filterType: 'freq',
+								sortValue: 10
 						}]
 					}];
 				scope.selectedFilters = [];
@@ -82,10 +136,22 @@ angular.module('myappApp')
 					force, tBody;
 				var firstClick = true;
 
-
-				var circleRadiusBig = 20,
-					circleRadiusSmall = 5,
-					circleLarge = 5,
+				var circleRadius = {
+					small: {
+						size: 5,
+						scalar: 1.5
+					},
+					medium: {
+						size: 10,
+						scalar: 2
+					},
+					big: {
+						size: 20,
+						scalar: 2.5
+					}
+				}
+				var selectedRadius = null;
+				var circleLarge = 5,
 					tempRadius;
 
 				var tip = d3.tip()
@@ -94,10 +160,8 @@ angular.module('myappApp')
 					    return constructTooltipHTML(d);
 					})
 					.direction(function(d){
-						if(d.x <= width*.5 && d.y <= height*.5) return 's'; //top-left corner, tooltip appears on the right
-						else if(d.x <= width*.5 && d.y >= height*.5) return 'n'; //bottom-left corner, tooltip apears on the right
-						else if(d.x >= width*.5 && d.y <= height*.5) return 's'; //top-right corner, tooltip appears on the left
-						else if(d.x >= width*.5 && d.y >= height*.5) return 'n'; //bottom-right corner, tooltip appears on the left
+						if(d.y <= height*.5) return 's'; //top-left corner, tooltip appears on the right
+						else return 'n';
 					})
 					.offset([0, -15]);
 
@@ -114,7 +178,7 @@ angular.module('myappApp')
 
 
 				processData(scope.data.coauthors, function(){
-
+					setRadiusForCurrentData();
 
 					var legend = d3.select('#legend-network').append('table')
 								.attr('class','legend');
@@ -177,12 +241,18 @@ angular.module('myappApp')
 						.attr('cx', function(d){return d.x;})
 						.attr('cy', function(d){return d.y;})
 						.attr('r', function(d) { 
-							if(d.times != undefined) return circleRadiusBig + d.times * 1.5;
-							else return circleRadiusBig; 
+							if(d.times != undefined) return selectedRadius.size * selectedRadius.scalar + d.times;
+							else return selectedRadius.size * selectedRadius.scalar; 
 						})
 						.attr('fill', function(d,i){
-							return color($.inArray(d.university, scope.universities));
+							if(!(d.index === 0)){
+								return color($.inArray(d.university, scope.universities));
+							} else {
+								return '#000000';
+							}
+							
 						})
+						.style('z-index', 900)
 						.style('cursor','pointer');
 
 					nodeEnter.append('svg:text')
@@ -203,7 +273,10 @@ angular.module('myappApp')
 					//Actions
 					nodeEnter
 						.on('mouseover', function(d){
-							tip.show(d);
+							if(! (d.index === 0)){
+								console.log('got here');
+								tip.show(d);
+							}
 							//Circle
 							tempRadius = parseInt($(this).children('circle').attr('r'));
 							d3.select(this).select('circle')
@@ -213,7 +286,9 @@ angular.module('myappApp')
 								.classed('node-active', true);
 						})
 						.on('mouseout', function(d){
-							tip.hide(d);
+							if(! (d.index === 0)){
+								tip.hide(d);
+							}
 							//Circle
 							d3.select(this).select('circle')
 								.attr('r', tempRadius);
@@ -223,20 +298,22 @@ angular.module('myappApp')
 								.classed('node-active', false);
 
 						})
-						.on('click', function(d){
-							var path = '';
-							if(!scope.data.corp){
-								path = '/author/'+d.fname+'/'+d.lname+'/'+d.key+'/'+scope.viz.value;
-							} else {
-								path = '/author/' +
-										'/' + d.fullname + 
-										'/' + d.link +
-										'/' + scope.viz.value;
-							}
+						.on('dblclick', function(d){
+							if(!d.index === 0){
+								var path = '';
+								if(!scope.data.corp){
+									path = '/author/'+d.fname+'/'+d.lname+'/'+d.key+'/'+scope.viz.value;
+								} else {
+									path = '/author/' +
+											'/' + d.fullname + 
+											'/' + d.link +
+											'/' + scope.viz.value;
+								}
 
-	      					$location.path(path);
-	      					tip.hide(d);
-	      					scope.reloadRoute();
+		      					$location.path(path);
+		      					tip.hide(d);
+		      					scope.reloadRoute();
+							}
 						})
 						.call(d3.behavior.drag()
 							.origin(function(d){return {x: d.x, y: d.y}})
@@ -252,6 +329,7 @@ angular.module('myappApp')
 
 							})
 							.on('dragend', function(d){
+								console.log(d);
 								tip.show(d);
 							}));
 
@@ -288,7 +366,7 @@ angular.module('myappApp')
 					}
 
 					if(filteredData.length === 0){
-						d3.select('#legend-bubble').selectAll('tbody').remove();
+						d3.select('#legend-network').selectAll('tbody').remove();
 						svg.selectAll('g').remove();
 						svg.append('svg:text')
 							.attr('x', 100)
@@ -296,6 +374,8 @@ angular.module('myappApp')
 							.text('No authors with the following constrainst. Please remove or select another.');
 					} else {
 						processData(filteredData, function(){
+							svg.select('text').remove();
+							setRadiusForCurrentData();
 							force = d3.layout.force()
 								.nodes(nodes)
 								.links([])
@@ -328,11 +408,15 @@ angular.module('myappApp')
 								.attr('cx', function(d){return d.x;})
 								.attr('cy', function(d){return d.y;})
 								.attr('r', function(d) { 
-									if(d.times != undefined) return circleRadiusBig + d.times * 1.5;
-									else return circleRadiusBig; 
+									if(d.times != undefined) return selectedRadius.size * selectedRadius.scalar + d.times;
+									else return selectedRadius.size * selectedRadius.scalar; 
 								})
 								.attr('fill', function(d,i){
-									return color($.inArray(d.university, scope.universities));
+									if(!(d.index === 0)){
+										return color($.inArray(d.university, scope.universities));
+									} else {
+										return '#000000';
+									}
 								})
 								.style('cursor','pointer');
 
@@ -349,11 +433,15 @@ angular.module('myappApp')
 								})
 								.attr('text-anchor', 'middle')
 								.attr('dy', '-1.7em')
+								.style('z-index', 900)
 								.style('cursor','pointer');
 
 							//Actions
 							nodeEnter
 								.on('mouseover', function(d){
+									if(! (d.index === 0)){
+										tip.show(d);
+									}
 									//Circle
 									tempRadius = parseInt($(this).children('circle').attr('r'));
 									d3.select(this).select('circle')
@@ -363,6 +451,9 @@ angular.module('myappApp')
 										.classed('node-active', true);
 								})
 								.on('mouseout', function(d){
+									if(! (d.index === 0)){
+										tip.hide(d);
+									}
 									//Circle
 									d3.select(this).select('circle')
 										.attr('r', tempRadius);
@@ -371,6 +462,23 @@ angular.module('myappApp')
 									d3.select(this).select('text')
 										.classed('node-active', false);
 
+								})
+								.on('dblclick', function(d){
+									if(!d.index === 0){
+										var path = '';
+										if(!scope.data.corp){
+											path = '/author/'+d.fname+'/'+d.lname+'/'+d.key+'/'+scope.viz.value;
+										} else {
+											path = '/author/' +
+													'/' + d.fullname + 
+													'/' + d.link +
+													'/' + scope.viz.value;
+										}
+
+				      					$location.path(path);
+				      					tip.hide(d);
+				      					scope.reloadRoute();
+									}
 								})
 								.call(d3.behavior.drag()
 									.origin(function(d){return {x: d.x, y: d.y}})
@@ -434,6 +542,10 @@ angular.module('myappApp')
 					var count = d.times;
 					var university = d.university;
 					var title = name;
+					var years = d.dates.toString();
+					var find =',';
+					var re = new RegExp(find,'g');
+					var fYears = years.replace(re,', ');
 
 					var html = 
 					'<div class="panel panel-primary">' + 
@@ -441,8 +553,9 @@ angular.module('myappApp')
 							name +
 						'</div>' +
 						'<div class="panel-body">' + 
-							'<strong>University: </strong>' + university + 
-							'<br><strong>Number of ties coauthored: </strong>' + count +
+							'<p><strong class="tooltip-body-title">University: </strong>' + university + 
+							'</p><p><strong class="tooltip-body-title">Number of times coauthored: </strong>' + count +
+							'</p><p><strong class="tooltip-body-title">Years Co-Authored:</strong>' + fYears + '</p>' +
 						'</div>' 
 					' </div>';
 
@@ -516,17 +629,14 @@ angular.module('myappApp')
 					    if(scope.selectedFilters.length === 0){
 				    		scope.selectedFilters = reply;
 				    	} else {
-				    		reply.forEach(function(newFilter){
-				    			scope.selectedFilters.forEach(function(oldFilter,i){
-				    				if(newFilter.type === oldFilter.type){
-				    					if(newFilter.value === oldFilter.value){
-				    						return;
-				    					} else {
-				    						scope.selectedFilters[i] = newFilter;
-				    					}
+				    		for(var i = 0; i < reply.length; i++){
+				    			for(var j = 0; j < scope.selectedFilters.length; j++){
+				    				if(reply[i].filterType === scope.selectedFilters[j]){
+				    					break;
 				    				}
-				    			});
-				    		});
+				    			}
+				    			scope.selectedFilters.push(reply[i]);
+				    		}
 				    	}
 				    	updateViz();
 				    }, function () {
@@ -534,16 +644,29 @@ angular.module('myappApp')
 				    });
 				}
 
-				function filterByDate(fDate){
+				function filterByDate(fDate, filteredData){
 					var temp = [];
-					scope.data.coauthors.forEach(function(author){
-						author.dates.forEach(function(date){
-							if(fDate === date){
-								temp.push(author);
-								return;
-							}
+					var temp = [];
+					var iFDate = parseInt(fDate);
+					if(filteredData === undefined){
+						scope.data.coauthors.forEach(function(author){
+							author.dates.forEach(function(date){
+								if(iFDate <= date){
+									temp.push(author);
+									return;
+								}
+							});
 						});
-					});
+					} else {
+						filteredData.forEach(function(author){
+							author.dates.forEach(function(date){
+								if(iFDate <= date){
+									temp.push(author);
+									return;
+								}
+							});
+						});
+					}
 
 					return temp;
 				}
@@ -591,6 +714,16 @@ angular.module('myappApp')
 					});
 
 					return dates;
+				}
+
+				function setRadiusForCurrentData(){
+					if(nodes.length <= 19){
+						selectedRadius = circleRadius.big;
+					} else if(nodes.length >= 20 && nodes.length <= 39){
+						selectedRadius = circleRadius.medium;
+					} else {
+						selectedRadius = circleRadius.small;
+					}
 				}
 
 			}

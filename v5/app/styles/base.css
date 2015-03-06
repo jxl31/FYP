@@ -66,11 +66,19 @@
 	border-radius: 5px;
 }
 
-.d3-tip > .panel{
+.d3-tip > .panel,
+.d3-tip > .panel > .panel-body{
 	margin-bottom: 0px;
-	white-space: nowrap;
+	white-space: normal;
 }
 
+.tooltip-body-title{
+	color: #ff7f0e;
+	font-style: italic;
+	text-decoration: underline;
+}
+
+tooltip-body-title
 .tooltip-title-list{
 	max-height: 300px;
 	overflow-y: auto;

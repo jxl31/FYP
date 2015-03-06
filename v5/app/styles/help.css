@@ -1,0 +1,26 @@
+@import url('http://fonts.googleapis.com/css?family=Open+Sans:400,700');
+
+.help-container{
+	display: flex;
+}
+
+.help-item{
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.help-item > div > .panel-heading{
+	background-color: #449d44;
+  	border-color: #398439;
+  	color: #fff;
+  	font-size: 1.5em;
+}
+
+.help-item > div > .panel-body,
+.help-item > div > p{
+	font-size: 1em;
+}
+
+.back-to-top{
+	float: right;
+}

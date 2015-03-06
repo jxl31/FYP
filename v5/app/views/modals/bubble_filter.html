@@ -1,21 +1,18 @@
 <script type="text/ng-template" id="bubble_filter.html">
     <div class="modal-header">
-            <h3 class="modal-title">Im a modal!</h3>
+            <h3 class="modal-title">Add a filter</h3>
         </div>
         <div class="modal-body">
-            <h1> TODO: ADD FILTERS HERE<h1>
-
             <div data-ng-repeat="filter in filters">
                 <!-- Selects -->
                 <div data-ng-if="filter.type === 'select'">
                     <h3> {{ filter.name }}</h3>
                     <select class="form-control" 
                         data-ng-model="selects[$index]"
-                        data-ng-options="opt as opt.label for opt in filter.values | orderBy: 'value'">
+                        data-ng-options="opt as opt.label for opt in filter.values | orderBy: 'sortValue'">
                     </select>
                 </div>
             </div>
-
         </div>
         <div class="modal-footer">
             <button class="btn btn-primary" ng-click="ok()">Add</button>

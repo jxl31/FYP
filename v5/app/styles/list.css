@@ -51,5 +51,10 @@
 .filter-list-box{
 	position: absolute; 
 	right:10px;
+	top: 10px;
 }
 
+.filter-list-box-discpline{
+	right: 40px;
+	top: 20px;
+}

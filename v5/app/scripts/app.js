@@ -26,9 +26,9 @@ var myApp = angular
         templateUrl: 'views/name.html',
         controller: 'NameSearchCtrl'
       })
-      .when('/about', {
-        templateUrl: 'views/about.html',
-        controller: 'AboutCtrl'
+      .when('/help', {
+        templateUrl: 'views/help.html',
+        controller: 'HelpCtrl'
       })
       .when('/contact', {
         templateUrl: 'views/contact.html',
