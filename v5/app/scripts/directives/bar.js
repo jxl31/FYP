@@ -203,6 +203,7 @@ angular.module('myappApp')
 							if(firstClick){
 								tip.hide(d);
 							}
+							tip.hide(d);
 							d3.select(this)
 					            .style('opacity', 1)
 					            .style('fill', tempColor);

@@ -13,8 +13,7 @@ angular.module('myappApp')
     }
 
     $rootScope.topics = [
-        {name: 'Co-Author', visualisations: [
-          {label: 'Pie Chart', title: 'Co-Authors' , value: 'coauthor-piechart'},
+        {name: 'Co-Authorship', visualisations: [
           {label: 'Bar Chart', title:'Co-Authors',value: 'coauthor-barchart'},
           {label: 'Network Graph', title:'Co-Authors',value: 'coauthor-network'},
           {label: 'Bubble Chart', title:'Co-Authors',value: 'coauthor-bubble'}

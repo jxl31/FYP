@@ -23,4 +23,36 @@
 
 .back-to-top{
 	float: right;
+	color: #fff;
+}
+
+.help-container{
+	font-size: 16px;
+	line-height: 1.7;
+}
+
+.help-visualisation-interaction{
+	font-size: 24px;
+	font-weight: bold;
+	text-decoration: underline;
+}
+
+.help-command{
+	font-weight: bold;
+	font-style: italic;
+	text-decoration: underline;
+}
+
+.bold-italics{
+	font-weight: bold;
+	font-style: italic;
+}
+
+.bold{
+	font-weight: bold;
+}
+
+.italics-underline{
+	font-style: italic;
+	text-decoration: underline;
 }

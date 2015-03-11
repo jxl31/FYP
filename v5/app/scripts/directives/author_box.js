@@ -28,12 +28,12 @@ angular.module('myappApp')
 						var encodedFullName = encodeURI(scope.data.fullname);
 						var path='/author/'+ encodedFullName + //fullname
 									'/' + scope.data.link +
-									'/' + $rootScope.topics[0].visualisations[1].value; //viz
+									'/' + $rootScope.topics[0].visualisations[2].value; //viz
 					} else { 
 						var path = '/author/'+scope.data.fname+ //first name
 								'/'+scope.data.lname+ //last name
 								'/'+scope.data.key+ //key
-								'/'+$rootScope.topics[0].visualisations[1].value; //viz
+								'/'+$rootScope.topics[0].visualisations[2].value; //viz
 					}
       				$location.path(path);
 				}

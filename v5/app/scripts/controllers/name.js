@@ -15,7 +15,6 @@ angular.module('myappApp')
 
     $rootScope.topics = [
         {name: 'Co-Author', visualisations: [
-          {label: 'Pie Chart', value: 'coauthor-piechart'},
           {label: 'Bar Chart', value: 'coauthor-barchart'},
           {label: 'Network Graph', value: 'coauthor-network'},
           {label: 'Bubble Chart', value: 'coauthor-bubble'}
@@ -38,7 +37,7 @@ angular.module('myappApp')
   	};
 
     $scope.clicked = function(oAuthor){
-      var path = '/author/'+oAuthor.fname+'/'+oAuthor.lname+'/'+oAuthor.key+'/'+$rootScope.topics[0].visualisations[3].value;
+      var path = '/author/'+oAuthor.fname+'/'+oAuthor.lname+'/'+oAuthor.key+'/'+$rootScope.topics[0].visualisations[2].value;
       $location.path(path);
     };
 

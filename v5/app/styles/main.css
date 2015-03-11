@@ -104,6 +104,40 @@ body {
   height: 300px;
 }
 
+.main-intro{
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
+.main-intro-about{
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.main-intro-panel{
+  width: 80%;
+  margin-top: 20px;
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+.main-intro-buttons {
+  margin-top: 30px;
+}
+
+.main-intro-buttons > h3{
+  font-weight: bold;
+  font-size: 22px;
+}
+
+.main-intro-buttons > p {
+  margin-top: 20px;
+}
+
+.main-intro-buttons > p > a{
+  text-align: center;
+  width: 100%;
+}
 /*
   Accordion
 */
@@ -118,6 +152,19 @@ a[class=accordion-toggle] > span{
 /*
   Carousel
 */
+
+.carousel-indicators li{
+  border: 1px solid #000;
+}
+
+.carousel-indicators .active{
+  background-color: #000;
+}
+
+#carousel-main{
+  margin-left: 0px;
+  margin-right: 0px;
+}
 
 .carousel-custom-caption{
   color: black;
