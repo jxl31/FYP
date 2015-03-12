@@ -1,9 +1,0 @@
-<div style="width:100%;margin-right:0px">
-    <input type="text" ng-model="query">
-    <ul style="overflow: scroll; width: 250px; height: 500px; float:left">
-        <!-- orderBy has '' because name is an attribute of author -->
-        <li ng-repeat="a in authors | filter: query | orderBy: 'name' | limitTo: numList"> <a href="#/barChart/{{a.name}}/{{a.key}}">{{ a.name }} </a>
-        </li>
-    </ul>
-    <button ng-click="debug()">Try</button>
-</div>
