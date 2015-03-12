@@ -29,7 +29,7 @@ rd.on('line', function(line) {
 */
 var options = {
 	server: { poolSize: 5 },
-	replset: { rs_name: 'scraper_v1_replica' }
+	replset: { rs_name: 'scraper_v1' }
 };
 options.server.socketOptions = options.replset.socketOptions = { keepAlive: 1 };
 mongoose.connect('mongodb://localhost/scraper_v1',options);
@@ -41,6 +41,7 @@ var router = express.Router(); //routers
 var alchemyAPI = new AlchemyAPI();
 
 var dbUpdateInterval = 1000 * 60 * 60 * 12; //12 hours
+//var CONTEXT_KEY = 490738;
 
 /*
 	Regex
@@ -48,9 +49,12 @@ var dbUpdateInterval = 1000 * 60 * 60 * 12; //12 hours
 var regex_key = '(context|ancestor_key)[=\\:](\\d+)',
 	regex_fname = 'author_fname.{3}%22(.*?)%22',
 	regex_lname = 'author_lname.{3}%22(.*?)%22',
+	regex_corp = 'corporate_author.{3}%22(.*?)%22',
 	regex_thesis = '[\\[\\(]Thesis[\\]\\)]',
 	regex_start = 'start=(\\d)',
-	regex_doc_count = 'Docs:\\s(\\d+)';
+	regex_doc_count = 'Docs:\\s(\\d+)',
+	regex_query = '(\\?q=(.*))',
+	regex_date = '\\d+[/\\-](\\d+)';
 	//regex_num = '\\((\\d+)\\)';
 
 /*
@@ -58,7 +62,9 @@ var regex_key = '(context|ancestor_key)[=\\:](\\d+)',
 */
 var URL_ARROW = 'http://arrow.dit.ie',
 	URL_DISCIPLINE = URL_ARROW + '/do/discipline_browser/disciplines',
-	URL_AUTHORS = URL_ARROW + '/authors.html';
+	URL_AUTHORS = URL_ARROW + '/authors.html',
+	URL_AUTHOR = 'http://arrow.dit.ie/do/search/results/json?start=0&facet=&facet=&facet=&facet=&facet=&facet=&q=author_lname%3A"lastname"%20AND%20author_fname%3A"firstname"&op_1=AND&field_1=text%3A&value_1=&start_date=&end_date=&context=authorKey&sort=date_desc&format=json&search=Search',
+	URL_CORP = 'http://arrow.dit.ie/do/search/results/json?q=corporate_author%3A%22fullname%22&query=Search&start=0&context=corpKey&facet=&facet=&facet=&facet=&facet=&facet=';
 
 /*
 	Schema Creation
@@ -74,12 +80,15 @@ var authorDetailSchema = mongoose.Schema({
 
 var authorSchema = mongoose.Schema({
 	_id: String,
+	fullname: String,
 	fname: String,
 	lname: String,
 	link: String,
 	key: Number,
 	count: Number,
-	detail_id: String
+	corp: Boolean,
+	detail_id: String,
+	dates: [String]
 },{
 	collection: 'Authors'
 });
@@ -110,7 +119,7 @@ db.on('error', console.error);
 db.once('open', function (callback) {
 	console.log('Connected to mongodb!');
 	setInterval(cleanLoadAuthors(Authors), dbUpdateInterval);
-	//setInterval(cleanLoadDiscpline(Disciplines), dbUpdateInterval);
+	setInterval(cleanLoadDiscpline(Disciplines), dbUpdateInterval);
 
 	router.use(function(req, res, next) {
 		next(); // make sure we go to the next routes and don't stop here
@@ -121,6 +130,29 @@ db.once('open', function (callback) {
 		Authors.find({},function (err, authors) {
 			if (err) return console.error(err);
 			return res.json(authors);
+		});
+	});
+
+	router.route('/author/:fullname/:url').get(function(req,res){
+		var fullname = req.params.fullname;
+		var url = decodeURIComponent(req.params.url);
+		Authors.findOne({fname:req.params.fullname}, function(err,author){
+			if(err) res.json(err);
+			if(author === null){
+				getAuthorThroughDiscipline(fullname, url, function(data){
+					if(!data.corp){
+						console.log('New Author');
+						persistAndSendAuthorDetails(res, data.fname, data.lname, data.key, fullname, data.corp);					
+					} else {
+						console.log('New Corp Author');
+						persistAndSendCorpAuthorDetails(res, data.fullname, data.key, data.corp);
+					}
+
+					
+				});
+			} else {
+				res.json(author);
+			}
 		});
 	});
 
@@ -147,7 +179,6 @@ db.once('open', function (callback) {
 				persistAndSendAuthorDetails(res, req.params.fname, req.params.lname, req.params.key);
 			}
 		});
-		//TODO: Get Keywords for every document that the author has.
 	});
 
 	router.route('/author/:details_id/:keywords').put(function(req,res){
@@ -156,16 +187,16 @@ db.once('open', function (callback) {
 		AuthorDetails.update({_id: d_id},{processedKeywords: p_keywords}, function(err,data){
 			if(err) res.json(err);
 			else{
-				console.log(data);
+				return res.json('Update Success');
 			}
-		})
-	})
+		});
+	});
 
 	//ROUTE: Get all disciplines
 	router.route('/disciplines').get(function(req,res){
 		Disciplines.find({}, function(err, disciplines){
 			if(err) return console.error(err);
-			return res.json(disciplines); //TODO: parse into sub-documents
+			return res.json(disciplines);
 		});
 	});
 
@@ -181,17 +212,122 @@ db.once('open', function (callback) {
 /**************************
 	START: Author
 **************************/
-function persistAndSendAuthorDetails(res,fname,lname, key){
+function getAuthorThroughDiscipline(fullname, url, callback){
+	getFirstLink(url, function(link){
+		extractFnameAndLastName(link, function(oAuthor){
+			callback(oAuthor);
+		})
+	});
+}
+
+function getFirstLink(url, callback){
+	var fullURL = URL_ARROW + url;
+	sjs.StaticScraper
+	.create(fullURL)
+	.scrape(function($){
+		var span = $('.author-list')[0];
+		var a = $(span.prev);
+		var link = a.attr('href');
+		return link;
+	}, function(data){
+		callback(data);
+	});
+}
+
+function extractFnameAndLastName(link, callback){
+	sjs.StaticScraper
+	.create(link)
+	.scrape(function($){
+		var obj = {};
+		var p = $('p[class=author]').children('a:not([rel="nofollow"])')
+		var a = $(p);
+		var link = a.attr('href');
+		if(link.match(regex_corp)){
+			obj = {
+				fullname: decodeURIComponent(link.match(regex_corp)[1]),
+				key: link.match(regex_key)[2],
+				corp: true
+			}
+		} else {
+			var fname = decodeURIComponent(link.match(regex_fname)[1]);
+			var lname = decodeURIComponent(link.match(regex_lname)[1]);
+			var key = link.match(regex_key);
+			obj = {
+				fname: fname,
+				lname: lname,
+				key: key[2],
+				link: link,
+				corp: false
+			}
+		}
+
+		return obj;
+	}, function(data){
+		callback(data);
+	});
+}
+
+function persistAndSendCorpAuthorDetails(res, fullname, key, corp){
+	//var sGeneralURL = 'http://arrow.dit.ie/do/search/results/json?q=corporate_author%3A%22fullname%22&query=Search&start=0&context=corpKey&facet=&facet=&facet=&facet=&facet=&facet=';
+
+	var sCorpURL = URL_CORP.replace('fullname',fullname).replace('corpKey',key);
+	var selectedCorp = encodeURIComponent(fullname);
+	var decodedCorp = decodeURIComponent(fullname);
+
+	getCorpData(sCorpURL, selectedCorp, function(data){
+		data['corp'] = true;
+		data['fullname'] = decodedCorp;
+		var new_id = mongoose.Types.ObjectId();
+		data['details_id'] = new_id;
+		var details = {
+			_id: new_id,
+			details: data
+		};
+
+		AuthorDetails.create(details, function(err,savedData){
+			if(err) console.log(err);
+			else console.log('Details ID: ' + savedData._id);
+		});
+
+		Authors.findOne({fullname: decodedCorp}, {_id: 1}, function(err,author){
+			if(err) res.json(err);
+			else if(author === null){
+				console.log('Creating new Author: ')
+				Authors.create({
+					_id: mongoose.Types.ObjectId(),
+					fullname: decodedCorp,
+					key: key,
+					count: data.num_found,
+					corp: corp,
+					detail_id: new_id
+				},function(err,data){
+					console.log('Corp created.');
+				});
+			} else {
+				Authors.update({_id: author._id}, { detail_id: details._id }, function(err,updated){
+					console.log('Records Update: ' + updated);
+				});
+			}
+		});
+
+		res.json(data);
+
+	});
+}
+
+function persistAndSendAuthorDetails(res,fname,lname, key, fullname, corp, url){
 	var resJSON;
 	var start = 0;
 	var skip = 25;
-	var sGeneralURL = 'http://arrow.dit.ie/do/search/results/json?start=0&facet=&facet=&facet=&facet=&facet=&facet=&q=author_lname%3A"lastname"%20AND%20author_fname%3A"firstname"&op_1=AND&field_1=text%3A&value_1=&start_date=&end_date=&context=authorKey&sort=date_desc&format=json&search=Search'
-	var sAuthorURI = sGeneralURL.replace('firstname', fname).replace('lastname', lname).replace('authorKey', key);
+	var sAuthorURI = URL_AUTHOR.replace('firstname', fname).replace('lastname', lname).replace('authorKey', key);
 	var selectedAuthor = fname + ' ' + lname;
 	getAuthorData(sAuthorURI, start, skip, selectedAuthor, getAuthorData, resJSON , function(data){
-		console.log('Got here');
 		data['fname'] = fname;
 		data['lname'] = lname;
+		data['corp'] = corp;
+		if(fullname !== undefined){
+			data['fullname'] = fullname;
+		}
 		var new_id = mongoose.Types.ObjectId();
 		data['details_id'] = new_id;
 		var details = {
@@ -212,9 +348,10 @@ function persistAndSendAuthorDetails(res,fname,lname, key){
 					lname: data.lname,
 					key: key,
 					count: data.num_found,
+					corp: corp,
 					detail_id: new_id
 				},function(err,data){
-					console.log('created');
+					console.log('Author created.');
 				});
 			} else {
 				Authors.update({_id: author._id}, { detail_id: details._id }, function(err,updated){
@@ -225,30 +362,48 @@ function persistAndSendAuthorDetails(res,fname,lname, key){
 		res.json(data);
 	});
 }
+
+function getCorpData(url, selectedCorp, callback){
+	request({
+			uri: url,
+			method: 'GET',
+			type: 'application/json'
+		}, function(error, response, body){
+			var raw = JSON.parse(body);
+			raw['corp'] = true;
+			formatBody(raw, selectedCorp, function(formattedData){
+				extractKeywordDocs(formattedData, function(finalData){
+					//extractUniversities(finalData, function(finalData2){
+						callback(finalData);
+					//});
+				});
+			});
+		});
+}
+
+
 function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCall){
 	var sStart = 'start=';
 	var startingPosition = URL.match(regex_start);
 	var tempURI = URL.replace(startingPosition[0], sStart+start);
 	encodeURI(tempURI);
 	console.log('Start: ' + start);
+	console.log(tempURI);
 	request({
 			uri: tempURI,
 			method: 'GET',
 			type: 'application/json'
 		}, function(error, response, body){
 			var raw = JSON.parse(body);
+			raw['corp'] = false;
 			if(start === 0){
 				if(raw.num_found > skip){
 					//callback called here
 					callback(URL, start+skip, skip, selectedAuthor, callback, raw, finalCall);
 				} else{
 					formatBody(raw, selectedAuthor, function(formattedData){
-						//Saving the extracted JSON to a non-strict schema
-						extractKeywordDocs(formattedData, function(finalData){
-							extractUniversities(finalData, function(finalData2){
-								finalCall(finalData2);
-							});
-						});
+						//Saving the extracted JSON to a non-strict schema{
+						finalCall(formattedData);
 					});
 				}
 
@@ -261,11 +416,7 @@ function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCa
 					callback(URL, start+skip, skip, selectedAuthor, callback, data, finalCall);
 				} else{
 					formatBody(data, selectedAuthor, function(formattedData){
-						extractKeywordDocs(formattedData, function(finalData){
-							extractUniversities(finalData, function(finalData2){
-								finalCall(finalData2);
-							});
-						});
+						finalCall(formattedData);
 					});
 				}
 			}
@@ -273,21 +424,47 @@ function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCa
 		});
 }
 
-function extractUniversities(mainJSON, callback){
+/**
+	Increments co-authors and also add authorName to the returned json
+*/
+function formatBody(raw, selectedAuthor, callback){
+	var temp = raw;
+	extractUniversities(temp, selectedAuthor, function(data){
+		extractKeywordDocs(data, function(finalData){
+			finalData.authorName = decodeURIComponent(selectedAuthor);
+			callback(finalData);
+		})
+	}); //will also add the coauthors
+}
+
+/**
+	Function that calls extractUniversity() multiple times for each link that is found
+*/
+
+function extractUniversities(mainJSON, selectedAuthor, callback){
 	var temp = [];
 	var index = 0;
+	var coAuthors = [];
 	mainJSON.docs.forEach(function(doc){
-		extractUniversity(doc.url, function(result){
+		extractUniversity(doc.url,mainJSON['corp'], function(result){
 			index++;
-			insertCoAuthorUni(mainJSON, result);
+			var date = doc['publication_date'].match(regex_date)[1];
+			insertCoAuthorUni(mainJSON, date, coAuthors,selectedAuthor, result, function(){
+			});
 			if(index === mainJSON.docs.length){
+				mainJSON.coauthors = coAuthors;
 				callback(mainJSON);
 			}
 		});
 	});
 }
 
-function extractUniversity(url, callback){
+/**
+	Scrapes the university for each author which is used for disambiguating
+	authors from each other.
+*/
+
+function extractUniversity(url, corp,callback){
 	var temp = [];
 	sjs.StaticScraper
 	.create(url)
@@ -295,12 +472,22 @@ function extractUniversity(url, callback){
 		$('p[class=author]').children('a:not([rel="nofollow"])').each(function(i,element){
 			var a = $(element);
 			var name = a.children('strong').text();
-			var uni = a.children('em').text();
 			var link = a.attr('href');
-			var fname = decodeURIComponent(link.match(regex_fname)[1]);
-			var lname = decodeURIComponent(link.match(regex_lname)[1]);
-			var key = link.match(regex_key);
-			temp.push({name: name, university: uni, fname: fname, lname: lname,key:key[2]});
+			if(!corp){
+				var uni = a.children('em').text();
+				if(uni === ''){
+					uni = 'Not Defined';
+				}
+				var fname = decodeURIComponent(link.match(regex_fname)[1]);
+				var lname = decodeURIComponent(link.match(regex_lname)[1]);
+				var key = link.match(regex_key);
+				temp.push({name: name, university: uni, fname: fname, lname: lname,key:key[2]});
+			} else {
+				var key = link.match(regex_key);
+				temp.push({name: name, link: link, key:key[2]});
+			}
+			
+			
 		});
 
 		return temp;
@@ -309,35 +496,110 @@ function extractUniversity(url, callback){
 	});
 }
 
+/**
+	Cleanly replaces the coauthors array by substituting it by the 
+	firstname and lastname of each authors url.
+*/
 
-function insertCoAuthorUni(mainJSON, tempArray){
-	for(var i = 0 ; i < mainJSON.coauthors.length; i++){
-		if(mainJSON.coauthors[i].university === undefined){
-			for(var j = 0; j < tempArray.length; j++){
-				if(tempArray[j].name.match(mainJSON.coauthors[i].name) !== null){
-					mainJSON.coauthors[i].university = tempArray[j].university;
-					mainJSON.coauthors[i].fname = tempArray[j].fname;
-					mainJSON.coauthors[i].lname = tempArray[j].lname;
-					mainJSON.coauthors[i].key = tempArray[j].key;
-					break;
-				}
+function insertCoAuthorUni(mainJSON, publication_date,coAuthors, selectedAuthor, tempArray, callback){
+	tempArray.forEach(function(author){
+		incrementCount(author, publication_date, coAuthors, selectedAuthor, mainJSON['corp']);
+	});
+
+	callback();
+}
+
+function incrementCount(author, publication_date, coAuthors, selectedAuthor, corp){
+	var decodedAuthor = decodeURIComponent(selectedAuthor);
+	if(author.name.indexOf(selectedAuthor) && author.name.match(regex_thesis) === null){
+		if(coAuthors.length === 0){
+			if(!corp){
+				coAuthors.push({
+					name: author.name,
+					count: 1,
+					key: author.key,
+					university: author.university,
+					fname: author.fname,
+					lname: author.lname,
+					dates: [publication_date]
+				});
+			} else {
+				coAuthors.push({
+					name: author.name,
+					count: 1,
+					key: author.key,
+					dates: [publication_date]
+				});
 			}
+			
+		} else {
+			//check every author in coauthors;
+			for(var i = 0; i < coAuthors.length; i++){
+				if(!corp){
+					if(coAuthors[i].fname.match(author.fname) && coAuthors[i].lname.match(author.lname)){
+						if(coAuthors[i].dates.indexOf(publication_date) < 0){
+							coAuthors[i].dates.push(publication_date);
+						}
+						coAuthors[i].count++;
+						return;
+					}
+				} else {
+					if(coAuthors[i].name.match(author.name)){
+						if(coAuthors[i].dates.indexOf(publication_date) < 0){
+							coAuthors[i].dates.push(publication_date);
+						}
+						coAuthors[i].count++;
+						return;
+					}
+				}
+				
+			}
+			var name = author.name;
+			if(!corp){
+				coAuthors.push({
+					name: name, 
+					count: 1, 
+					key: author.key, 
+					university: author.university,
+					fname: author.fname, 
+					lname: author.lname,
+					dates: [publication_date]
+				});
+			} else {
+				coAuthors.push({
+					name: name, 
+					count: 1, 
+					key: author.key, 
+					dates: [publication_date]
+				});
+			}
+			return;
 		}
 	}
 }
 
+/**
+	Function that calls extractKeywords() multiple times for each document
+*/
+
 function extractKeywordDocs(data, callback){
 	var temp  = [];
+	var index = 0;
 	data.docs.forEach(function(doc){
 		extractKeywords(doc.url, function(results){
+			index++;
 			temp.push({docTitle: doc.title, docKeywords: results});
-			if(temp.length === data.docs.length){
+			if(index === data.docs.length){
 				data['keywords'] = temp;
-				callback(data); 
+				callback(data);
 			}
 		});
 	});
 }
+
+/**
+	Extracts keywords using alchemyAPI.keywowrds()
+*/
 
 function extractKeywords(url, callback){
 	var output;
@@ -347,28 +609,9 @@ function extractKeywords(url, callback){
 	});
 }
 
-function formatBody(raw, selectedAuthor, callback){
-	var temp = raw;
-	var coauthorCount = [];
-	var docs = temp.docs;
-	docs.forEach(function(doc,i){
-		var authors = doc.author_display;
-		authors.forEach(function(author){
-			if(author.indexOf(selectedAuthor)){
-				if(coauthorCount.length == 0){
-					coauthorCount.push({name: author, count: 1})
-				} else{
-					incrementCount(author,coauthorCount,selectedAuthor);
-				}
-			}
-		})
-	});
-
-	temp.coauthors = coauthorCount;
-	temp.authorName = selectedAuthor;
-	callback(temp);
-}
-
+/**
+	Loads authors from arrow.dit.ie/authors.html
+*/
 function cleanLoadAuthors(model){
 	clean(model);
 	clean(AuthorDetails);
@@ -526,29 +769,17 @@ function scrapeAuthorsDiscipline(discipline, callback){
 		var table = $('tbody');
 		table.children().each(function(y,something){
 			var tr = $(this); //this is with (document number)
-			var fullname = tr.children('td:nth-child(2)').text();
-			var words = fullname.split(' ');
-			for(var i = 0; i < words.length; i++){
-				if(words[i] in dictionary){
-					break;
-				} else if (i === words.length-1){
-					var a = tr.children('td:nth-child(2)').children('a');
-					var link = a.attr('href');
-					var names = a.text().split(' ');
-					var fname = names[0];
-					var lname = '';
-					if(names[names.length-1].match(regex_thesis) === null){
-						lname = names[names.length-1];
-					} else {
-						lname = names[names.length-2];
-					}
-					var count = parseInt(tr.children('td:nth-child(3)').text());
-					temp.push({
-						fname: fname,
-						lname: lname,
-						count: count
-					});
-				}
+			var a = tr.children('td:nth-child(2)').children('a');
+			var fullname = a.text();
+			var link = encodeURIComponent(a.attr('href'));
+			var docCount = parseInt(tr.children('td:nth-child(3)').text());
+
+			if(fullname.match(regex_thesis) === null){
+				temp.push({
+					fullname: fullname,
+					count: docCount,
+					link: link
+				});
 			}
 		}).get();
 		return temp;
@@ -560,16 +791,6 @@ function scrapeAuthorsDiscipline(discipline, callback){
 /**************************
 	END: Discipline
 **************************/
-
-function incrementCount(author,array,selectedAuthor){
-	for(var i = 0; i < array.length; i++){
-		if(array[i].name.match(author)){
-			array[i].count++;
-			return;
-		};
-	}
-	array.push({name: author, count: 1});
-}
 
 function clean(model){
 	var remove = model.remove();
