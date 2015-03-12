@@ -1,0 +1,15 @@
+<h1>{{ data.authorName }}: {{ viz.title }} 
+	<span class="year" data-ng-if="to !== null">({{ from }} -  {{ to }})<span> 
+</h1>
+<div class="bar-filter-container">
+	<button class="btn btn-success" data-ng-click="openFilterModal()">Add Filter <span class="glyphicon glyphicon-filter"></span></button>
+	<div ng-include="'views/modals/bubble_filter.html'"></div>
+	<button class="btn btn-primary" type="button" data-ng-repeat="filter in selectedFilters">
+	  {{ filter.filterLabel }} 
+	  	<span class="badge"> {{filter.label}} </span> 
+	  	<span class="badge"><i class="glyphicon glyphicon-remove" data-ng-click="removeFilter(filter)"></i></span>
+	</button>
+</div>
+<div class="bar-visualisation-container">
+	<div ng-include="'views/modals/bubble_popover.html'"></div>
+</div>

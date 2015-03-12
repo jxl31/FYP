@@ -1,0 +1,20 @@
+<div>
+	<div>
+		{{searchQuery}}
+	</div>
+	<div class="filter-list-box btn-group" dropdown is-open="status.isopen">
+		<button type="button" class="btn btn-primary dropdown-toggle" dropdown-toggle ng-disabled="disabled">
+			<span class="glyphicon glyphicon-th-list"></span> {{selectedFilter.label}}
+		</button>
+		<ul id="diagramDropdown" class="dropdown-menu" role="menu">
+	    	<li data-ng-repeat="filter in filterList">
+	    		<a ng-click="toggleFilter(filter)" >{{ filter.label }}</a>
+	    	</li>
+	    </ul>
+	</div>
+	<div class="author-box-container">
+		<author-box data-ng-repeat="author in authors | filter:searchQuery | orderBy: selectedFilter.value" data="author">
+		 </author-box>
+	</div>
+
+</div>
