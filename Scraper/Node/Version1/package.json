@@ -11,6 +11,6 @@
     "lazy": "^1.0.11",
     "mongoose": "^3.8.21",
     "request": "latest",
-    "scraper": "latest"
+    "scraperjs": "^0.3.3"
   }
 }
