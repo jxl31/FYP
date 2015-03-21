@@ -1,20 +1,32 @@
+/*
+	Author: John Xaviery Lucente
+	Directive Name: BubblesDirective
+	Use: To create nodes and links according to co-authors data
+	Scope:
+		authorData: contains the selected authors full details
+		relouadRoute: is a function located in the controller "MainVizCtrl" that will reload the page
+		viz: contains the parameter for the current visualisation. will be used for redirection
+	algorithms url: 
+		dragging: http://bl.ocks.org/mbostock/4063269
+*/
 'use strict';
 
 angular.module('BubblesDirective',[])
-	.directive('customBubble', ['$modal','$compile','$rootScope','$location', '$route', '$window', '$timeout',
-		function ($modal, $compile, $rootScope,$location,$route,$window,$timeout) {
+	.directive('customBubble', ['$modal','$compile','$rootScope','$location', '$route', '$window', 
+		function ($modal, $compile, $rootScope,$location,$route,$window) {
 			return {
 				restrict: 'EA',
 				templateUrl: 'views/visualisation/bubble.html',
 				scope: {
-					paramSize: '=paramSize',
 					reloadRoute: '&reload',
 					authorData: '=data',
 					viz: '='
 				},
-				link: function (scope, iElement, iAttrs) {
+				link: function (scope) {
+					console.log(scope.authorData);
+					scope.processedData = null;
 
-					scope.processedData;
+					//set up the dates shown in the title
 					scope.currentDate = new Date();
 					scope.universities = [];
 					scope.dates = getDates();
@@ -25,6 +37,8 @@ angular.module('BubblesDirective',[])
 					scope.from = d3.min(scope.dates, function(d){
 						return parseInt(d.value);
 					});
+
+					//set up the filters
 					scope.filters = [{
 						name: 'Date Co-Authored',
 						type: 'select',
@@ -78,8 +92,7 @@ angular.module('BubblesDirective',[])
 								filterType: 'date',
 								sortValue: 20
 							}
-						]}
-						,{
+						]},{
 							name: 'Number of times co-authored:',
 							type: 'select',
 							values: [{
@@ -104,16 +117,54 @@ angular.module('BubblesDirective',[])
 								sortValue: 10
 						}]
 					}];
+					//local variables
 					scope.selectedFilters = [];
 					var svg, legend, tBody, tBodyTitle, tip;
 					var firstClick = true;
+					var el = $('.bubble-visualisation-container')[0];
+					var diameter = $('.visualisation-panel').width()-200,
+						margin = {
+							top: 0,
+							right: 250,
+							bottom: 50,
+							left: 0
+						},
+						//color pallette that will be used
+					    color = d3.scale.category20();
 
-					//Legend
+
+					//set up the tooltip for the visualisation
+					tip = d3.tip()
+						.attr('class', 'd3-tip')
+						.html(function(d) {
+						    return constructTooltipHTML(d);
+						})
+						.direction(function(d){
+							if(d.x <= diameter*0.5 && d.y <= diameter*0.5) {return 'e'; }//top-left corner, tooltip appears on the right
+							else if(d.x <= diameter*0.5 && d.y >= diameter*0.5) {return 'e'; }//bottom-left corner, tooltip apears on the right
+							else if(d.x >= diameter*0.5 && d.y <= diameter*0.5) {return 'w'; }//top-right corner, tooltip appears on the left
+							else if(d.x >= diameter*0.5 && d.y >= diameter*0.5) {return 'w'; }//bottom-right corner, tooltip appears on the left
+						})
+						.offset(function(d){
+							if(d.x <= diameter*0.5 && d.y <= diameter*0.5) {return [0,10];} //top-left corner, tooltip appears on the right
+							else if(d.x <= diameter*0.5 && d.y >= diameter*0.5) {return [0,10]; }//bottom-left corner, tooltip apears on the right
+							else if(d.x >= diameter*0.5 && d.y <= diameter*0.5) {return [0,-10];} //top-right corner, tooltip appears on the left
+							else if(d.x >= diameter*0.5 && d.y >= diameter*0.5) {return [0,-10];} //bottom-right corner, tooltip appears on the left
+						});
+					//set up the canvas for the visualisation
+					svg = d3.select(el).append('svg')
+					    .attr('width', diameter + margin.left + margin.right)
+					    .attr('height', diameter + margin.top + margin.bottom)
+					    .attr('transform', 'translate(' + margin.left + ',' + margin.right + ')')
+					    .attr('class', 'bubble')
+					    .call(tip);
+					//Set up the legend
 					legend = d3.select('#legend-bubble').append('table')
 									.attr('class','legend');
 					tBodyTitle = legend.append('tbody');
 					tBody = legend.append('tbody');
 
+					//set up the button that will toggle the legend
 					var tButton = $('<button/>', {
 							text: 'Legend',
 							id: 'legendTitleButton',
@@ -128,189 +179,60 @@ angular.module('BubblesDirective',[])
 							class: 'btn btn-lrg btn-success legend-button'
 						});
 
-					var el = $('.bubble-visualisation-container')[0];
-					var diameter = $('.visualisation-panel').width()-200,
-						margin = {
-							top: 0,
-							right: 250,
-							bottom: 50,
-							left: 70
-						},
-					    format = d3.format(',d'),
-					    color = d3.scale.category20(),
-					    tempColor,
-					    tempRadius;
+					var tempColor;
 
+					//set up the layout used: pack
 					var bubble = d3.layout.pack()
-					    .size([diameter, diameter])
-					    .padding(1.5);
-
-					// var drag = d3.behavior.drag()
-					//     .origin(function(d) { return {x: d.x, y: d.y}; })
-					//     .on('dragstart', dragstarted)
-					//     .on('drag', dragged)
-					//     .on('dragend', dragended);
+					    .size([diameter, diameter]);
 
 
-					processData(scope.authorData.coauthors, function(processedData){
-						scope.processedData = processedData;
-						tip = d3.tip()
-							.attr('class', 'd3-tip')
-							.html(function(d) {
-							    return constructTooltipHTML(d);
-							})
-							.direction(function(d){
-								if(d.x <= diameter*.5 && d.y <= diameter*.5) return 'e'; //top-left corner, tooltip appears on the right
-								else if(d.x <= diameter*.5 && d.y >= diameter*.5) return 'e'; //bottom-left corner, tooltip apears on the right
-								else if(d.x >= diameter*.5 && d.y <= diameter*.5) return 'w'; //top-right corner, tooltip appears on the left
-								else if(d.x >= diameter*.5 && d.y >= diameter*.5) return 'w'; //bottom-right corner, tooltip appears on the left
-							})
-							.offset(function(d){
-								if(d.x <= diameter*.5 && d.y <= diameter*.5) return [0,10]; //top-left corner, tooltip appears on the right
-								else if(d.x <= diameter*.5 && d.y >= diameter*.5) return [0,10]; //bottom-left corner, tooltip apears on the right
-								else if(d.x >= diameter*.5 && d.y <= diameter*.5) return [0,-10]; //top-right corner, tooltip appears on the left
-								else if(d.x >= diameter*.5 && d.y >= diameter*.5) return [0,-10]; //bottom-right corner, tooltip appears on the left
-							});
+					function updateViz(){
+						//clean container
+						svg.selectAll('*').remove();
+						tBody.selectAll('tr').remove(); //row in the table
 
-						svg = d3.select(el).append('svg')
-						    .attr('width', diameter + margin.left + margin.right)
-						    .attr('height', diameter + margin.top + margin.bottom)
-						    .attr('transform', 'translate(' + margin.left + ',' + margin.right + ')')
-						    .attr('class', 'bubble')
-						    .call(tip);
-
-						var node = svg.selectAll('g.node')
-						      .data(bubble.nodes(classes(scope.processedData))
-						      .filter(function(d) { return !d.children; }))
-						    .enter().append('g')
-						      .attr('class', 'node')
-						      .attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; });
-
-						// node.append('title')
-						// 	.text(function(d) { return d.child + ': ' + format(d.value);});
-
-						node.append('circle')
-							.attr('r', 0)
-	      					.style('fill', function(d,i) {
-	      						return color($.inArray(d.university, scope.universities)); 
-	      					})
-	      					.style('cursor', 'pointer');
-
-	      				node.append('text')
-	      					.attr('dy', '.3em')
-						    .style('text-anchor','middle')
-						    .style('cursor','pointer')
-						    .text(function(d) { 
-						    	return d.child.substring(0, d.r / 4); 
-						    });
-
-						node.transition()
-							.selectAll('circle')
-								.attr('r', function(d) {return d.r})
-							.delay(function(d,i){
-								return i * 200;
-							})
-							.duration(1000)
-							.ease('elastic');
-
-						// node.on('mouseover', function(d){
-						// 	tip.show(d);
-						// }).on('mouseout', function(d){
-						// 	tip.hide(d);
-						// })
-
-						node.on('dblclick', function(d){
-							var path = '';
-							if(!scope.authorData.corp){
-								path = '/author/'+d.fname+'/'+d.lname+'/'+d.key+'/'+scope.viz.value;
-							} else {
-								path = '/author/' +
-										'/' + d.fullname + 
-										'/' + d.link +
-										'/' + scope.viz.value;
-							}
-
-	      					$location.path(path);
-	      					tip.hide(d);
-	      					scope.reloadRoute();
-	      					scope.$apply();
-						});
-
-						node.on('click',function(d){
-							tempColor = this.style.fill;
-							tip.show(d);
-							firstClick = true;
-						})
-
-
-
-						// .on('mouseout',function(d){
-						// 	d3.select(this)
-					 //            .style('opacity', 1)
-					 //            .style('fill', tempColor);
-					 //        tip.hide();
-						// });
-
-						//node.call(drag);
-
-						//Legend
-						var tTitle = $('#legend-bubble').children('table').children('tbody:first-child').append(tButton);
-
-						// create one row per segment.
-				        var tr = tBody.selectAll('tr').data(scope.universities).enter().append('tr');
-				            
-				        // create the first column for each segment.
-				        tr.append('td').append('svg').attr('width', '16').attr('height', '16').append('rect')
-				            .attr('width', '16').attr('height', '16')
-							.attr('fill',function(d,i){ return color(i); });
-
-						// create the second column for each segment.
-					    tr.append('td').text(function(d){ return d;});
-					});
-
-					function updateViz(){	
 						var filteredData;
 						if(scope.selectedFilters.length === 0){
 							filteredData = scope.authorData.coauthors;
 						} else {
 							scope.selectedFilters.forEach(function(filter){
-								if(filter.filterType === 'date'){
+								if(filter.filterType === 'date'){ //if there's a filter for date filter by date
 									filteredData = filterByDate(filter.value, filteredData);
-
-								} else if(filter.filterType === 'freq'){
+								} else if(filter.filterType === 'freq'){ //if there's a filter for frequency filter by frequency
 									filteredData = filterByFreq(filter.value, filteredData);
 								}
 							});
 						}
 						if(filteredData.length === 0){
+							//if there is no authors containined in the data after filtering
+							//tell users the message that there is no authors
 							d3.select('#legend-bubble').selectAll('tbody').remove();
-							svg.selectAll('g').remove();
+							svg.selectAll('*').remove();
 							svg.append('svg:text')
 								.attr('x', 100)
 								.attr('y', diameter/3)
 								.text('No authors with the following constrainst. Please remove or select another.');
 						} else {
 							processData(filteredData, function(data){
-								svg.select('text').remove();
-								svg.selectAll('.node').remove();
-								var node = svg.selectAll('.node')
-							        .data(
-							            bubble.nodes(classes(data)).filter(function (d){return !d.children;}),
-							            function(d) {return d.child} // key data based on className to keep object constancy
-							        );
-								var nodeEnter = node.enter()
-							        .append('g')
-							        .attr('class', 'node')
-							        .attr('transform', function (d) {
-							            return 'translate(' + d.x + ',' + d.y + ')';
-						        	});
+								scope.processedData = data;
 
-						        nodeEnter.append('circle')
+								//set up node with data
+								var node = svg.selectAll('g.node')
+								      .data(bubble.nodes(classes(data))
+								      .filter(function(d) { return !d.children; }));
+								var nodeEnter = node.enter().append('g')
+								      .attr('class', 'node')
+								      .attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; });
+
+						       	//create the circle
+						       	nodeEnter.append('circle')
 							        .attr('r', function (d) {return d.r;})
-							        .style('fill', function (d, i) {
+							        .style('fill', function (d) {
 							        	return color($.inArray(d.university, scope.universities));
-							        });
+							        })
+							        .style('cursor', 'pointer');
 
+							    //create the text
 							    nodeEnter.append('text')
 			      					.attr('dy', '.3em')
 								    .style('text-anchor','middle')
@@ -319,16 +241,8 @@ angular.module('BubblesDirective',[])
 								    })
 								    .style('cursor','pointer');
 
-						        node.select('circle')
-							        .attr('r', function (d) {
-							            return d.r;
-							        })
-							        .style('fill', function (d, i) {
-							            return color($.inArray(d.university, scope.universities));
-							        })
-							        .style('cursor','pointer');
-
-							    node.on('dblclick', function(d){
+								//actions
+								node.on('dblclick', function(d){
 									var path = '';
 									if(!scope.authorData.corp){
 										path = '/author/'+d.fname+'/'+d.lname+'/'+d.key+'/'+scope.viz.value;
@@ -340,32 +254,28 @@ angular.module('BubblesDirective',[])
 									}
 			      					$location.path(path);
 			      					tip.hide();
-			      					scope.$apply();
-								});
-
-								node.on('click',function(d){
+			      					scope.reloadRoute();
+								})
+								.on('click',function(d){
 									firstClick = true;
 									tempColor = this.style.fill;
 									tip.show(d);
 								});
 
+								//transition the node to be elastic
 							    node.transition()
-							    .selectAll('circle')
-									.attr('r', function(d) {return d.r})
-								.delay(function(d,i){
-									return i * 200;
-								})
-								.duration(1000)
-								.ease('elastic');
+								    .selectAll('circle')
+										.attr('r', function(d) {return d.r; })
+									.delay(function(d,i){
+										return i * 200;
+									})
+									.duration(1000)
+									.ease('elastic');
 
-							    node.exit().remove();
+								node.exit().remove();
 
-							    if($('#legend-bubble > table').is(':empty')){
-							    	tBodyTitle = legend.append('tbody');
-									tBody = legend.append('tbody');
-									var tTitle = $('#legend-bubble').children('table').children('tbody:first-child').append(tButton);
-							    }
-							    tBody.selectAll('tr').remove();
+								//set up the legend
+								$('#legend-bubble').children('table').children('tbody:first-child').append(tButton);
 							   	var tr = tBody.selectAll('tr').data(scope.universities);
 							   	var trEnter = tr.enter().append('tr');
 							   	// create the first column for each segment.
@@ -381,25 +291,25 @@ angular.module('BubblesDirective',[])
 						}
 					}
 
+
+					/*
+						Will catch any click besides the tooltip and thus closes the tooltip
+					*/
 					$window.onclick = function(){
-						var jTip = $('.d3-tip');
 						if(!firstClick){
-							console.log(jTip);
 							tip.hide();
 						} else {
 							firstClick = false;
 						}
-					}
+					};
 
 					/*
-						HTML for the tooltip
+						implementing the HTML template for the tooltip
 					*/
-
 					function constructTooltipHTML(d){
 						var name = d.fname + ' ' + d.lname;
 						var count = d.value;
 						var university = d.university;
-						var title = name;
 						var years = d.dates.toString();
 						var find =',';
 						var re = new RegExp(find,'g');
@@ -413,55 +323,19 @@ angular.module('BubblesDirective',[])
 							'<div class="panel-body">' + 
 								'<p><strong class="tooltip-body-title">University: </strong>' + university + 
 								'</p><p><strong class="tooltip-body-title">Number of times coauthored: </strong>' + count +
-								'</p><p><strong class="tooltip-body-title">Years Co-Authored: </strong>' + fYears + '</p>'
-							'</div>' 
-						' </div>';
+								'</p><p><strong class="tooltip-body-title">Years Co-Authored: </strong>' + fYears + '</p>' +
+								'<p>Double-Click to go to ' + name + '\'s profile</p>' +
+							'</div></div>';
 
 						return html;
-						// return '<strong>Name:</strong> ' + name
-						// 		+ '<br><strong>Number of times coauthored:</strong> ' + count
-						// 		+ '<br><strong>University:</strong> ' + university;
 					}
 
 					/*
-						Drag functionality
+						function that will open the modal for filterings
 					*/
-
-					// function dragstarted(d) {
-					//   this.parentNode.appendChild(this);
-					//   tempRadius = d.r;
-					//   console.log('tempRadius before drag: ' + tempRadius);
-					//   d3.select(this).selectAll('circle').transition()
-					//       .ease('elastic')
-					//       .duration(600)
-					//       .attr('r', d.r + 25);
-	    //   			}
-					
-					// function dragged(d) {
-					// 	d.x = d3.event.x;
-					// 	d.y = d3.event.y;
-
-					// 	d3.select(this)
-					// 	  .attr('transform', 'translate(' + d.x + ',' + d.y + ')');
-					// }
-
-					// function dragended() {
-					// 	console.log('After drag ended:' + tempRadius);
-					//   d3.select(this).selectAll('circle').transition()
-					//       .ease('elastic')
-					//       .duration(600)
-					//       .attr('r', tempRadius);
-					// }
-
-					// function nozoom() {
-					//   d3.event.preventDefault();
-					// }
-
-					/*
-						Modal for creating filters
-					*/
-					scope.openFilterModal = function(size){
-						var messageFromBubblejs = 'Hello';
+					scope.openFilterModal = function(size){ 
+						//creates a modal instance passing in the html template
+						//also passing the controller that will handle the data in and out
 						var modalInstance = $modal.open({
 					      templateUrl: 'bubble_filter.html',
 					      controller: 'BubbleModalCtrl',
@@ -473,62 +347,79 @@ angular.module('BubblesDirective',[])
 					      }
 					    });
 
+						//This will execute when the "add" button in the modal is clicked
+						//the reply contains the filter that the user has selected
 					    modalInstance.result.then(function (reply) {
+					    	//if it is the first filter then apply the filter
 					    	if(scope.selectedFilters.length === 0){
 					    		scope.selectedFilters = reply;
-					    	} else {
+					    	} else { //else compare filters and remove if it is already there
 					    		for(var i = 0; i < reply.length; i++){
 					    			for(var j = 0; j < scope.selectedFilters.length; j++){
-					    				if(reply[i].filterType === scope.selectedFilters[j]){
-					    					break;
+					    				if(reply[i].filterType === scope.selectedFilters[j].filterType){
+					    					scope.selectedFilters.splice(j,1);
 					    				}
 					    			}
 					    			scope.selectedFilters.push(reply[i]);
 					    		}
-					    		// reply.forEach(function(newFilter){
-					    		// 	scope.selectedFilters.forEach(function(oldFilter,i){
-					    		// 		if(newFilter.filterType === oldFilter.filterType){
-					    		// 			if(newFilter.value === oldFilter.value){
-					    		// 				return;
-					    		// 			} else {
-					    		// 				scope.selectedFilters[i] = newFilter;
-					    		// 			}
-					    		// 		}
-					    		// 	});
-					    		// });
 					    	}
+
+					    	//update the visualisation
 						    updateViz();
 					    }, function () {
 					    	console.log('Modal dismissed at: ' + new Date());
 					    });
-					}
+					};
 
+
+					/*
+						Removing Filters when the "x" button is clicked
+					*/
+					scope.removeFilter = function(filterToBeRemoved){
+						scope.selectedFilters.forEach(function(filter,i,array){
+							if(filterToBeRemoved.filterType === filter.filterType){
+								array.splice(i,1);
+							}
+						});
+						console.log(scope.selectedFilters);
+						updateViz();
+					};
+
+					/*
+						function that will filter the data by date
+					*/
 					function filterByDate(fDate, filteredData){
 						var temp = [];
 						var iFDate = parseInt(fDate);
-						if(filteredData === undefined){
-							scope.authorData.coauthors.forEach(function(author){
-								author.dates.forEach(function(date){
-									if(iFDate <= date){
-										temp.push(author);
-										return;
-									}
-								});
-							});
-						} else {
-							filteredData.forEach(function(author){
-								author.dates.forEach(function(date){
-									if(iFDate <= date){
-										temp.push(author);
-										return;
-									}
-								});
-							});
-						}
 
+						//if filtered data is null then add authors that have dates
+						//equal or less than the date filter provided
+						if(filteredData === undefined){
+						for(var i = 0; i < scope.authorData.coauthors.length; i++){
+							for(var j = 0; j < scope.authorData.coauthors[i].dates.length; j++){
+									if(iFDate <= parseInt(scope.authorData.coauthors[i].dates[j])){
+										temp.push(scope.authorData.coauthors[i]);
+										break;
+									}
+								}
+							}
+						} else {
+							for(var i = 0; i < filteredData.length; i++){
+								for(var j = 0; j < filteredData[i].dates.length; j++){
+									if(iFDate <= parseInt(filteredData[i].dates[j])){
+										temp.push(filteredData[i]);
+										break;
+									}
+								}
+							}
+						}
+						//returns results
 						return temp;
 					}
 
+					/*
+						function that will filter the data by frequency of co-authorship
+					*/
 					function filterByFreq(fFreq, filteredData){
 						var temp = [];
 						var fFreqs = fFreq.split('-');
@@ -545,24 +436,13 @@ angular.module('BubblesDirective',[])
 								}
 							});
 						}
+						//return the results
 						return temp;
 					}
-
+					
+					//checks the number if its within the range of the frequency
 					function inRange(min, number, max){
 						return number >= min && number <= max;
-					}
-
-					/*
-						Removing Filters
-					*/
-					scope.removeFilter = function(filterToBeRemoved){
-						scope.selectedFilters.forEach(function(filter,i,array){
-							if(filterToBeRemoved.filterType === filter.filterType){
-								array.splice(i,1);
-							}
-						});
-						console.log(scope.selectedFilters);
-						updateViz();
 					}
 
 
@@ -570,11 +450,12 @@ angular.module('BubblesDirective',[])
 						Process each node so that it will target parent
 					*/
 					function classes(root) {
-					  var classes = [];
+					  var classes1 = [];
 
 					  function recurse(name, node) {
-					    if (node.children) node.children.forEach(function(child) { recurse(node.name, child); });
-					    else classes.push({parent: name, 
+					    if (node.children) {node.children.forEach(function(child) { recurse(node.name, child); });}
+					    else {
+					    	classes1.push({parent: name, 
 					    				dates: node.dates,
 					    				child: node.name, 
 					    				value: node.size, 
@@ -583,14 +464,15 @@ angular.module('BubblesDirective',[])
 					    				lname: node.lname,
 					    				key: node.key,
 					    				link: node.link});
+						}
 					  }
 
 					  recurse(null, root);
-					  return {children: classes};
+					  return {children: classes1};
 					}
 
 
-					//Selects
+					//Selects the dates that will be used for the filtering
 					function getDates (){
 						var dates = [];
 						scope.authorData.coauthors.forEach(function(author){
@@ -603,7 +485,7 @@ angular.module('BubblesDirective',[])
 									});
 								} else {
 									for(var i =0; i < dates.length; i++){
-										if(dates[i].value === date) return;
+										if(dates[i].value === date) {return;}
 									}
 									dates.push({ label: date, value: date, filterLabel: 'Date CoAuthored: ', filterType: 'date'});
 								}
@@ -619,8 +501,8 @@ angular.module('BubblesDirective',[])
 					function processData(data, callback){
 						scope.universities = [];
 						var temp = {};
-						temp['name'] = scope.authorData.authorName;
-						temp['children'] = data.map(function(d){
+						temp.name = scope.authorData.authorName;
+						temp.children = data.map(function(d){
 							return {
 								name: d.name,
 								dates: d.dates,
@@ -632,17 +514,23 @@ angular.module('BubblesDirective',[])
 								key: d.key,
 								fullname: d.fullname,
 								link: d.link
-							}
+							};
 						});
 
 						data.forEach(function(d){
-							if($.inArray(d.university,scope.universities) < 0)
+							if($.inArray(d.university,scope.universities) < 0){
 								scope.universities.push(d.university);
-						})
-
-
+							}
+						});
 						callback(temp);
 					}
+
+					function init(){
+						updateViz();
+					}
+
+					//start the visualisation
+					init();
 				}
 			};
 	}]);

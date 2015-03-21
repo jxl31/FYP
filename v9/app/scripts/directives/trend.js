@@ -10,15 +10,16 @@ angular.module('TrendDirective',[])
 				change: '&',
 				viz: '='
 			},
-			link: function (scope, iElement, iAttrs) {
+			link: function (scope) {
+
 				var margin = {
 						top: 50,
 						right: 20,
 						bottom: 50,
 						left: 70
 					},
-				width = $('.trend-visualisation-container').width(),
-				height = 450;
+					width = $('.trend-visualisation-container').width(),
+					height = 450;
 				var tip;
 				scope.dates = getDates();
 				var firstClick = true;
@@ -92,7 +93,7 @@ angular.module('TrendDirective',[])
 					x.domain(d3.extent(data, function(d) { return d.tDate; }));
 					console.log(x.domain());
 					y.domain([0,d3.max(data, function(d) { return d.amount; })]);
-					yAxis.ticks(d3.max(data, function(d) { return d.amount }));
+					yAxis.ticks(d3.max(data, function(d) { return d.amount; }));
 					console.log(data);
 					svg.append('g')
 				      .attr('class', 'trend-x trend-axis')
@@ -103,7 +104,7 @@ angular.module('TrendDirective',[])
 				      .attr('class', 'trend-y trend-axis')
 				      .call(yAxis);
 
-				    var path = svg.append('path')
+				    svg.append('path')
 				      .datum(data)
 				      .attr('class', 'trend-line')
 				      .attr('d', line);
@@ -113,8 +114,12 @@ angular.module('TrendDirective',[])
 						.attr('class', 'd3-tip tooltip-trend')
 						.offset([0,-10])
 						.direction(function(d){
-							if(y(d.amount) < height * .4) return 's';
-							else return 'n';
+							if(y(d.amount) < height * 0.4) {
+								return 's';
+							}
+							else {
+								return 'n';
+							}
 						})
 						.html(function(d) {
 						    return constructTooltipHTML(d);
@@ -142,7 +147,7 @@ angular.module('TrendDirective',[])
 					//add dots
 					svg.selectAll('.dot')
 					  .data(data)
-					  .enter().append("circle")
+					  .enter().append('circle')
 					  .attr('class', 'datapoint')
 					  .attr('cx', function(d) { return x(d.tDate); })
 					  .attr('cy', function(d) { return y(d.amount); })
@@ -179,7 +184,7 @@ angular.module('TrendDirective',[])
 						svg.selectAll('g').remove();
 						svg.append('svg:text')
 							.attr('x', 100)
-							.attr('y', diameter/3)
+							.attr('y', width/3)
 							.text('No authors with the following constrainst. Please remove or select another.');
 					} else {
 						processData(filteredData, function(data){
@@ -191,7 +196,7 @@ angular.module('TrendDirective',[])
 							xAxis.scale(x);
 							y.domain([0,d3.max(data, function(d) { return d.amount; })]);
 							yAxis.scale(y);
-							yAxis.ticks(d3.max(data, function(d) { return d.amount }));
+							yAxis.ticks(d3.max(data, function(d) { return d.amount; }));
 							console.log(x.domain());
 
 							svg.select('.trend-x.trend-axis').remove();
@@ -208,7 +213,7 @@ angular.module('TrendDirective',[])
 						      .attr('class', 'trend-y trend-axis')
 						      .call(yAxis);
 
-						    var path = svg.append('path')
+						    svg.append('path')
 						      .datum(data)
 						      .attr('class', 'trend-line')
 						      .attr('d', line);
@@ -232,7 +237,7 @@ angular.module('TrendDirective',[])
 							//add dots
 							svg.selectAll('.dot')
 							  .data(data)
-							  .enter().append("circle")
+							  .enter().append('circle')
 							  .attr('class', 'datapoint')
 							  .attr('cx', function(d) { return x(d.tDate); })
 							  .attr('cy', function(d) { return y(d.amount); })
@@ -259,7 +264,7 @@ angular.module('TrendDirective',[])
 				scope.goToCloudGraph = function(d){
 					scope.change({viz: $rootScope.topics[1].visualisations[1], docs: d.titles });
 					scope.$apply();
-				}
+				};
 
 
 				function processData(docs,callback){
@@ -270,22 +275,24 @@ angular.module('TrendDirective',[])
 							tempData.push({
 								date: d.publication_date.match('\\d+[/\\-](\\d+)')[1],
 								amount: 1,
-								titles: [d.title],
+								titles: [{title: d.title, downloadLink: d.download_link}],
 								indexes: [i],
 								peerReviewd: d.peer_reviewed
 							});
 						} else {
 							for(var y = 0; y < tempData.length; y++){
+								//example of a publication data "01/2014"
+								//the reges provided takes the year of the publication
 								if(tempData[y].date === d.publication_date.match('\\d+[/\\-](\\d+)')[1]){
 									tempData[y].amount++;
-									tempData[y].titles.push(d.title);
+									tempData[y].titles.push({title: d.title, downloadLink: d.download_link});
 									tempData[y].indexes.push(i);
 									return;
 								} else if(y+1 === tempData.length){
 									tempData.push({
 										date: d.publication_date.match('\\d+[/\\-](\\d+)')[1],
 										amount : 1,
-										titles: [d.title],
+										titles: [{title: d.title, downloadLink: d.download_link}],
 										indexes: [i],
 										peerReviewd: d.peer_reviewed
 									});
@@ -295,13 +302,12 @@ angular.module('TrendDirective',[])
 						} //else
 					});
 
-					scope.data['trendData'] = tempData;
+					scope.data.trendData = tempData;
 
 					callback(tempData);
 				}
 
 				scope.openFilterModal = function(size){
-					var messageFromBubblejs = 'Hello';
 					var modalInstance = $modal.open({
 				      templateUrl: 'bubble_filter.html',
 				      controller: 'BubbleModalCtrl',
@@ -319,18 +325,18 @@ angular.module('TrendDirective',[])
 				    	} else {
 				    		for(var i = 0; i < reply.length; i++){
 				    			for(var j = 0; j < scope.selectedFilters.length; j++){
-				    				if(reply[i].filterType === scope.selectedFilters[j]){
+				    				if(reply[i].filterType === scope.selectedFilters[j].filterType){
 				    					break;
 				    				}
+				    				scope.selectedFilters.push(reply[i]);
 				    			}
-				    			scope.selectedFilters.push(reply[i]);
 				    		}
 				    	}
 					    updateViz();
 				    }, function () {
 				    	console.log('Modal dismissed at: ' + new Date());
 				    });
-				}
+				};
 
 				scope.removeFilter = function(filterToBeRemoved){
 					scope.selectedFilters.forEach(function(filter,i,array){
@@ -340,18 +346,17 @@ angular.module('TrendDirective',[])
 					});
 					console.log(scope.selectedFilters);
 					updateViz();
-				}
+				};
 
 				function constructTooltipHTML(d){
 					var heading = d.date;
 					var amount = d.amount;
-					console.log(d);
 
-					var titles = '<ul class="tooltip-title-list">';
+					var titles = '<ol class="tooltip-title-list">';
 					d.titles.forEach(function(data){
-						titles += '<li> ' + data + '</li>'
+						titles += '<li> <a target="_blank" href="'+ data.downloadLink +'">' + data.title + '</a></li>';
 					});
-					titles+= '</ul>'
+					titles+= '</ol>';
 
 					var html = 
 						'<div class="panel panel-primary tooltip-trend">' + 
@@ -363,7 +368,8 @@ angular.module('TrendDirective',[])
 								titles +
 								'<strong class="tooltip-body-title">Number of Publications: </strong>' +
 								amount +
-							'</div>'
+								'<br>Double-Click node to view keywords.' +
+							'</div>' +
 						' </div>';
 
 
@@ -373,8 +379,10 @@ angular.module('TrendDirective',[])
 				function filterByPeer(bPeer){
 					var temp = [];
 					scope.data.docs.forEach(function(doc){
-						if(doc.peer_reviewed === bPeer) temp.push(doc);
-					})
+						if(doc.peer_reviewed === bPeer) {
+							temp.push(doc);
+						}
+					});
 
 					return temp;
 				}
@@ -382,8 +390,10 @@ angular.module('TrendDirective',[])
 				function filterByPublicationTitle(sPTitle){
 					var temp = [];
 					scope.data.docs.forEach(function(doc){
-						if(doc.publication_title === sPTitle) temp.push(doc);
-					})
+						if(doc.publication_title === sPTitle) { 
+							temp.push(doc);
+						}
+					});
 					return temp;
 				}
 
@@ -401,7 +411,9 @@ angular.module('TrendDirective',[])
 							});
 						} else {
 							for(var i = 0; i < temp.length; i++){
-								if(temp[i].value === doc.publication_title) return;
+								if(temp[i].value === doc.publication_title) { 
+									return;
+								}
 							}
 							temp.push({
 								label: doc.publication_title,
@@ -416,6 +428,7 @@ angular.module('TrendDirective',[])
 					return temp;
 				}
 
+				//Getting Dates from the authors to be used as the filter values
 				function getDates (){
 					var dates = [];
 					scope.data.coauthors.forEach(function(author){
@@ -424,7 +437,9 @@ angular.module('TrendDirective',[])
 								dates.push(date);
 							} else {
 								for(var i =0; i < dates.length; i++){
-									if(dates[i].value === date) return;
+									if(dates[i].value === date) { 
+										return;
+									}
 								}
 								dates.push(date);
 							}
@@ -441,7 +456,7 @@ angular.module('TrendDirective',[])
 					} else {
 						firstClick = false;
 					}
-				}
+				};
 
 			}
 		};

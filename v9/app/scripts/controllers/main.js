@@ -1,25 +1,28 @@
-'use strict';
+/*
+  Author: John Xaviery Lucente
+  Controller Name: MainCtrl
+  Use: controls the highlighting of headers
+*/
 
-/**
- * @ngdoc function
- * @name v9App.controller:MainCtrl
- * @description
- * # MainCtrl
- * Controller of the v9App
- */
+'use strict';
 angular.module('v9App')
   .controller('MainCtrl', function ($scope) {
+    //dummy test
     $scope.awesomeThings = [
       'HTML5 Boilerplate',
       'AngularJS',
       'Karma'
     ];
 
+    //toggle highlighted headers
     var headerButtons = $('div.header').children('ul').children('li');
     headerButtons.each(function(i,button){
-      if($(button).hasClass('active')) $(button).toggleClass('active');
+      if($(button).hasClass('active')) {
+        $(button).toggleClass('active');
+      }
     });
 
+    //variables used for the carousel
     $scope.indicators = [0,1,2,3,4,5,6,7];
     $scope.imageAvailable = [{
       img_url: 'images/image_1.PNG',

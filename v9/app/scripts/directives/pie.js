@@ -8,10 +8,10 @@ angular.module('PieDirective',[])
 			scope: {
 				data: '=data'
 			},
-			link: function (scope, iElement, iAttrs) {
+			link: function (scope, iElement) {
 				console.log(scope.data);
 
-				var pie = new d3pie(iElement[0],{
+				new d3pie(iElement[0],{
 								size: {
 									canvasWidth: 700,
 									canvasHeight: 700,
@@ -43,4 +43,4 @@ angular.module('PieDirective',[])
 							});
 			}
 		};
-	}])
+	}]);

@@ -2,8 +2,10 @@
 <html class="no-js">
   <head>
     <meta charset="utf-8">
-    <title></title>
-    <meta name="description" content="">
+    <title>Visualisation of DIT Arrow</title>
+    <meta name="description" content="Final Year Project">
+    <meta name="keywords" content="Final, Year, Project, Visualisatio">
+    <meta name="author" content="John Xaviery Lucente">
     <meta name="viewport" content="width=device-width">
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
     <!-- build:css(.) styles/vendor.css -->
@@ -32,10 +34,16 @@
           <li><a ng-href="#/help">Help</a></li>
           <li><a ng-href="#/contact">Contact</a></li>
         </ul>
-        <h3 class="text-muted title-app">Visualisation of DIT's Online Repository</h3>
+        <h3 class="text-muted title-app"><a href="#/">Visualisation of DIT's Online Repository</a>
+          <span>
+            <a href="http://arrow.dit.ie/">
+               <img src="images/arrow_logo.PNG">
+            </a>
+          </span>
+        </h3>
       </div>
 
-      <div class="main" ng-view=""></div>
+      <div class="main" ui-view></div>
 
       <div class="footer">
         <p class="footer-author">Developed By: John Xaviery Lucente</p>
@@ -66,6 +74,8 @@
     <script src="bower_components/d3/d3.js"></script>
     <script src="bower_components/d3pie/d3pie.js"></script>
     <script src="bower_components/d3-tip/index.js"></script>
+    <script src="bower_components/d3-cloud/d3.layout.cloud.js"></script>
+    <script src="bower_components/angular-ui-router/release/angular-ui-router.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
 
@@ -78,6 +88,7 @@
     <script src="scripts/controllers/help.js"></script>
     <script src="scripts/controllers/contact.js"></script>
     <script src="scripts/controllers/visualisation.js"></script>
+    <script src="scripts/controllers/modal.js"></script>
     <!-- End Controllers -->
 
     <!-- Directives -->

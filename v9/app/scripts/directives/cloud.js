@@ -1,4 +1,12 @@
 /*
+	Author: John Xaviery Lucente
+	Directive Name: BubblesDirective
+	Use: To create nodes and links according to co-authors data
+	Scope:
+		data: contains the selected authors full details
+		indexes: contains the indexes of the clicked year in the trend graph
+		loading: flag for if the processing of the words is still not finished
+		
 	Algorithm reference: https://github.com/jasondavies/d3-cloud/
 */
 
@@ -14,7 +22,7 @@ angular.module('CloudDirective',[])
 				indexes: '=indexes',
 				loading: '&',
 			},
-			link: function (scope, iElement, iAttrs) {
+			link: function (scope) {
 				scope.loading({loaded: false});
 				scope.allDates = getDates();
 				scope.selectedDateFilter = null;
@@ -30,12 +38,12 @@ angular.module('CloudDirective',[])
 				var color = d3.scale.category20(),
 					svg;
 			    var el = $('.cloud-visualisation-container')[0];
-			    	
+
 				svg = d3.select(el).append('svg')
 			    		.attr('width',width + margin.left + margin.right)
-						.attr("height", height + margin.top + margin.bottom)
+						.attr('height', height + margin.top + margin.bottom)
 					.append('g')
-						.attr('transform', "translate(" + [width >> 1, height >> 1] + ")");
+						.attr('transform', 'translate(' + [width >> 1, height >> 1] + ')');
 
 			    processData(function(words){
 			    	scope.titleDate = getTitleDate(words);
@@ -55,7 +63,7 @@ angular.module('CloudDirective',[])
 						.padding(1)
 						.font('Impact')
 						.fontSize(function(d) { return d.size; })
-						.rotate(function() { return ~~(Math.random()*5) * 30 - 70;  })
+						.rotate(function() { return ~~(Math.random()*5) * -40 + 60;  })
 						.on('end', draw)
 						.start();
 
@@ -65,14 +73,13 @@ angular.module('CloudDirective',[])
 			    	if(n !== o){
 			    		console.log(scope.titleDate);
 			    	}
-			    })
+			    });
 
 			    function updateViz(){
 			    	var filteredData = filterByDate(scope.selectedDateFilter);
 			    	scope.titleDate = scope.selectedDateFilter;
 			    	console.log(filteredData);
 			    	processData(function(words){
-			    		console.log(words);
 			    		svg.selectAll('text').remove();
 			    		d3.layout.cloud()
 				    		.size([width, height])
@@ -85,40 +92,40 @@ angular.module('CloudDirective',[])
 							.on('end', draw)
 							.start();
 
-			    	}, filteredData)
+			    	}, filteredData);
 
 			    }
 
 
 			    function draw(words){
-
-					var word = 
-						svg.selectAll("text")
-					        .data(words)
-					      .enter().append("text")
-					        .style("font-size", function(d) { return d.size + "px"; })
-					        .style("font-family", "Impact")
-					        .style("fill", function(d, i) { return color(i); })
-					        .attr("text-anchor", "middle")
-					        .attr("transform", function(d) {
-					          return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
-					        })
-					        .text(function(d) { return d.text; });
+					svg.selectAll('text')
+				        .data(words)
+				      .enter().append('text')
+				        .style('font-size', function(d) { return d.size + 'px'; })
+				        .style('font-family', 'Impact')
+				        .style('fill', function(d, i) { return color(i); })
+				        .attr('text-anchor', 'middle')
+				        .attr('transform', function(d) {
+				          return 'translate(' + [d.x, d.y] + ')rotate(' + d.rotate + ')';
+				        })
+				        .text(function(d) { return d.text; });
 			    }
 
 			    scope.toggleDate = function(date){
 			    	scope.selectedDateFilter = date;
 			    	updateViz();
-			    }
+			    };
 
 			    function getDates (){
 					var dates = [];
 					scope.data.coauthors.forEach(function(author){
 						author.dates.forEach(function(date){
-							if(dates.length === 0)
+							if(dates.length === 0){
 								dates.push(date); 
-							else if($.inArray(date,dates) === -1)
+							}
+							else if($.inArray(date,dates) === -1){
 								dates.push(date);
+							}
 						});
 					});
 
@@ -132,8 +139,8 @@ angular.module('CloudDirective',[])
 			    		scope.data.docs.forEach(function(doc){
 			    			if(word.from === doc.title){
 			    				var date = doc.publication_date.match('\\d+[/\\-](\\d+)')[1];
-			    				if(dates.length === 0) dates.push(date);
-			    				else if($.inArray(date, dates) === -1) dates.push(date);
+			    				if(dates.length === 0) {dates.push(date);}
+			    				else if($.inArray(date, dates) === -1) {dates.push(date);}
 			    			}
 			    		});
 			    	});
@@ -166,7 +173,7 @@ angular.module('CloudDirective',[])
 		    								size: 5 + word.relevance * 30,
 		    								from: keywords.docTitle
 		    							});
-		    						})
+		    						});
 		    					}
 		    				});
 		    			}
@@ -222,7 +229,7 @@ angular.module('CloudDirective',[])
 													//console.log('x:' + x + ', l:' + scope.data.keywords[j].docKeywords.length);
 													if(!ifSimilarWords(tempWords, scope.data.keywords[j].docKeywords[x].text)){
 														tempWords.push({
-															text: scope.data.keywords[j].docKeywords[x]['text'],
+															text: scope.data.keywords[j].docKeywords[x].text,
 															size: 5 + scope.data.keywords[j].docKeywords[x].relevance * wScale, 
 															from: scope.data.keywords[j].docTitle
 														});
@@ -245,14 +252,13 @@ angular.module('CloudDirective',[])
 				}
 
 				function checkWordsForwardSlash(word){
-					if(word.text.indexOf('/') != -1){
+					if(word.text.indexOf('/') !== -1){
 						word.text = word.text.replace('/' , ' or ');
 					}
 				}
 
 				function ifSimilarWords(array, lookupWord){
 					for(var i = 0; i < array.length; i++){
-						//console.log('Word: ' + lookupWord + ', Compared Word: ' + array[i].text + ', EditDistance: ' + getEditDistance(lookupWord, array[i].text));
 						if(getEditDistance(lookupWord, array[i].text) <= 1){
 							return true;
 						} else if(i+1 === array.length){
@@ -263,8 +269,8 @@ angular.module('CloudDirective',[])
 
 				//https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#JavaScript
 				function getEditDistance(w1,w2){
-					if(w1.length === 0) return w2.length; 
-					if(w2.length === 0) return w1.length; 
+					if(w1.length === 0) {return w2.length; }
+					if(w2.length === 0) {return w1.length; }
 
 					var matrix = [];
 
@@ -283,7 +289,7 @@ angular.module('CloudDirective',[])
 					// Fill in the rest of the matrix
 					for(i = 1; i <= w2.length; i++){
 						for(j = 1; j <= w1.length; j++){
-						  if(w2.charAt(i-1) == w1.charAt(j-1)){
+						  if(w2.charAt(i-1) === w1.charAt(j-1)){
 						    matrix[i][j] = matrix[i-1][j-1];
 						  } else {
 						    matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
@@ -296,5 +302,5 @@ angular.module('CloudDirective',[])
 					return matrix[w2.length][w1.length];
 				}
 			}
-		}
-	}])
+		};
+	}]);

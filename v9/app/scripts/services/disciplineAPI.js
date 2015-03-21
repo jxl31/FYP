@@ -1,3 +1,9 @@
+/*
+	Author: John Xaviery Lucente
+	Module: AuthorAPI
+	Use: communicate with the server through the use of the $http service that angular provides
+	Service: Gets details of discipline
+*/
 'use strict';
 
 angular.module('v9App')
@@ -5,6 +11,7 @@ angular.module('v9App')
 		var factory = {};
 		var prefix = 'http://localhost:8081/api/';
 
+		//Gets the list of disciplines
 		factory.getDisciplines = function(){
 			var deferred = $q.defer();
 
@@ -17,8 +24,7 @@ angular.module('v9App')
 			});
 
 			return deferred.promise;
-		}
-
+		};
 
 		return factory;
-	}])
+	}]);

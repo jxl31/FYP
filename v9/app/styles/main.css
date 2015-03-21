@@ -38,11 +38,20 @@ body {
   padding-bottom: 19px;
 }
 
-
 .title-app{
   color: #fff;
   padding-left: 20px;
   padding-top: 10px;
+}
+
+.title-app a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.title-app img{
+  width: 130px;
+  height: 35px;
 }
 
 .custom-buttons{
@@ -110,7 +119,7 @@ body {
 }
 
 .main-intro-about{
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.7;
 }
 
@@ -122,7 +131,9 @@ body {
 }
 
 .main-intro-buttons {
-  margin-top: 30px;
+  margin-top: 0px;
+  border: 0px;
+  box-shadow: none;
 }
 
 .main-intro-buttons > h3{
@@ -152,26 +163,40 @@ a[class=accordion-toggle] > span{
 /*
   Carousel
 */
-
-.carousel-indicators li{
-  border: 1px solid #000;
+.carousel {
+  height: 350px;
+}
+/* Since positioning the image, we need to help out the caption */
+.carousel-caption {
+  z-index: 10;
 }
 
-.carousel-indicators .active{
-  background-color: #000;
+/* Declare heights because of positioning of img element */
+.carousel .item {
+  height: 350px;
+  background-color: #777;
+}
+.carousel-inner > .item > img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 250px;
+  width: 425px;
+  margin-left: 215px;
+  margin-top: 5px;
 }
 
-#carousel-main{
-  margin-left: 0px;
-  margin-right: 0px;
+.carousel-indicators{
+  bottom: 0px;
 }
 
-.carousel-custom-caption{
-  color: black;
+.carousel-caption{
+  bottom: 0px;
+  padding-bottom: 20px;
 }
 
-.carousel-custom-inner{
-  height: 500px;
+.contact-heading{
+  text-decoration: underline;
 }
 
 /* Customize container */

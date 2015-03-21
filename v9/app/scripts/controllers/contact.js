@@ -1,12 +1,13 @@
+/*
+  Author: John Xaviery Lucente
+  Controller Name: ContactCtrl
+  Use: 
+    - control the highlighing of headers
+*/
+
+
 'use strict';
 
-/**
- * @ngdoc function
- * @name v9App.controller:AboutCtrl
- * @description
- * # AboutCtrl
- * Controller of the v9App
- */
 angular.module('v9App')
   .controller('ContactCtrl', function ($scope) {
     $scope.awesomeThings = [
@@ -15,8 +16,11 @@ angular.module('v9App')
       'Karma'
     ];
 
+    //toggles the highlighting of the header
     var headerButtons = $('div.header').children('ul').children('li');
     headerButtons.each(function(i,button){
-      if($(button).hasClass('active')) $(button).toggleClass('active');
+      if($(button).hasClass('active')) {
+        $(button).toggleClass('active');
+      }
     });
   });

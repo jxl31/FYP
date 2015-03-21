@@ -16,9 +16,11 @@
 	opacity: .9;
 	font-size: 1.5em;
 	font-weight: bold;
+	z-index: 15;
 }
 
 .node-active{
+	z-index: 30;
 	font-size: 2em;
 }
 

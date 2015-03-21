@@ -1,85 +1,69 @@
+/*
+  Author: John Xaviery Lucente
+  Module: App Configurations
+  Use: sets up the dependency and routes for the application
+*/
 'use strict';
-
-/**
- * @ngdoc overview
- * @name v9App
- * @description
- * # v9App
- *
- * Main module of the application.
- */
-// angular
-//   .module('v9App', [
-//     'ngAnimate',
-//     'ngResource',
-//     'ngRoute'
-//   ])
-//   .config(function ($routeProvider) {
-//     $routeProvider
-//       .when('/', {
-//         templateUrl: 'views/main.html',
-//         controller: 'MainCtrl'
-//       })
-//       .when('/about', {
-//         templateUrl: 'views/about.html',
-//         controller: 'AboutCtrl'
-//       })
-//       .otherwise({
-//         redirectTo: '/'
-//       });
-//   });
-
-
 angular
   .module('v9App', [
-    'ngAnimate',
-    'ngResource',
-    'ngRoute',
-    'ui.bootstrap',
-    'AuthorBox',
-    'BarsDirective',
-    'BubblesDirective',
-    'CloudDirective',
-    'NetworkDirective',
-    'PieDirective',
-    'TrendDirective'
+    'ui.router', //state provider
+    'ngAnimate', //animation
+    'ngResource', //resource
+    'ngRoute', //routing
+    'ui.bootstrap', //angular-bootstrap
+    'AuthorBox', //directive: author box
+    'BarsDirective', //directive: bar
+    'BubblesDirective', //directive: bubble
+    'CloudDirective', //directive: cloud
+    'NetworkDirective', //directive: network
+    'PieDirective', //directive: pie
+    'TrendDirective' //directive: trend
 
   ])
-  .config(function ($routeProvider) {
-    $routeProvider
-      .when('/', {
+  .config(function ($stateProvider, $urlRouterProvider, $urlMatcherFactoryProvider){
+    $urlRouterProvider.otherwise('home');
+
+    $stateProvider
+      //route for index page
+      .state('home', {
+        url: '/home',
         templateUrl: 'views/main.html',
         controller: 'MainCtrl'
       })
-      .when('/name', {
+      //route for the author list
+      .state('authorList', {
+        url: '/name',
         templateUrl: 'views/name.html',
         controller: 'NameSearchCtrl'
       })
-      .when('/help', {
+      //route for help
+      .state('help', {
+        url : '/help',
         templateUrl: 'views/help.html',
         controller: 'HelpCtrl'
       })
-      .when('/contact', {
+      //route for contact
+      .state('contact' ,{
+        url:'/contact',
         templateUrl: 'views/contact.html',
         controller: 'ContactCtrl'
       })
-      .when('/discipline',{
+      //route for discipline list
+      .state('disciplineList' ,{
+        url: '/discipline',
         templateUrl: 'views/discipline.html',
         controller: 'DisciplineSearchCtrl'
       })
-      .when('/author/:fname/:lname/:key/:viz',{
+      //route for author provided first and last name
+      .state('author1', {
+        url: '/author/:fname/:lname/:key/:viz',
         templateUrl: 'views/visualisation.html',
         controller: 'MainVisCtrl'
       })
-      .when('/author/:fullname/:link/:viz', {
+      //route for author provided fullname
+      .state('author2', {
+        url: '/author/:fullname/:link/:viz',
         templateUrl: 'views/visualisation.html',
         controller: 'MainVisCtrl'
-      })
-      .when('/author/:details_id', {
-        templateUrl: 'views/visualisation.html',
-        controller: 'MainVisCtrl'
-      })
-      .otherwise({
-        redirectTo: '/'
       });
   });
