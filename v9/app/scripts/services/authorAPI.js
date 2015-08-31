@@ -51,7 +51,7 @@ angular.module('v9App')
 			factory.getAuthorFromDiscipline = function(fullname, link){
 				var deferred = $q.defer();
 				var uri ='';
-				var url = uri.concat(prefix).concat('author/').concat(fullname).concat('/').concat(link)
+				var url = uri.concat(prefix).concat('author/').concat(fullname).concat('/').concat(link);
 				console.log(url);
 				$http({
 					url: url,

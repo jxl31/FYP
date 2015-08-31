@@ -39,14 +39,17 @@ angular.module('v9App')
     $scope.author = {};
     $scope.statusGroup = { open: 'false' };
     $scope.loaded = false;
+    $scope.fname = '';
+    $scope.lname = '';
+    $scope.conceptKey = null;
 
     //retrieve the variables passed in the parameters
     $scope.paramSize = countParams();
-    var fname = $stateParams.fname;
-    var lname = $stateParams.lname;
+    $scope.fname = $stateParams.fname;
+    $scope.lname = $stateParams.lname;
+    $scope.conceptKey = $stateParams.key;
     var fullname = $stateParams.fullname;
     var link = encodeURIComponent($stateParams.link);
-    var conceptKey = $stateParams.key;
     var passedViz = $stateParams.viz;
 
     //init function
@@ -64,12 +67,12 @@ angular.module('v9App')
         });
       } else { //else use the normal way of getting the author's details through
         //first and last name and key
-        promiseA = AuthorAPI.getAuthor(fname,lname,conceptKey);
+        promiseA = AuthorAPI.getAuthor($scope.fname,$scope.lname,$scope.conceptKey);
         promiseA.then(function(data){
           $rootScope.author = data;
           $scope.author = data;
           $scope.loaded = true;
-          $scope.currentPath = '/author/'+fname+'/'+lname+'/'+ conceptKey + '/';
+          $scope.currentPath = '/author/'+$scope.fname+'/'+$scope.lname+'/'+ $scope.conceptKey + '/';
         });
       }
       
@@ -85,6 +88,9 @@ angular.module('v9App')
     //sets the visualisation to toggle the condition on the visualisation.html
     //this will set what visualisation will be shown
     $scope.setSelectedVisualisation = function(viz,docs){
+      console.log('Gets here');
+      console.log(docs);
+      console.log(viz);
       if(docs !== undefined){
         $scope.indexDocsForCloud = docs;
       }
@@ -92,13 +98,18 @@ angular.module('v9App')
     };
 
     //used by the selection of visualisation to change the path and reload both controller and view
-    $scope.changePath = function changePath(viz){
+    $scope.changePath = function changePath(viz, button){
       if($('.d3-tip') !== null){
         $('.d3-tip').remove();
       }
       var path = $scope.currentPath+viz.value;
       $location.path(path);
+
     };
+
+    $scope.go = function(path){
+      $location.path(path);
+    }
 
     /*
       Set Selected Visualisation with the passed visualisation
@@ -129,6 +140,4 @@ angular.module('v9App')
       }
       return size;
     }
-
-
   });

@@ -1,4 +1,15 @@
+/*
+	Author: John Xaviery Lucente
+	Project: FYP
+	Import:	Google
+*/
 @import url('http://fonts.googleapis.com/css?family=Open+Sans:400,700');
+
+/*Size of help image*/
+.help-image{
+	width: 15.625em;
+	height: 14.375em;
+}
 
 .help-container{
 	display: flex;
@@ -9,13 +20,15 @@
 	margin-right: auto;
 }
 
+/*Help headings*/
 .help-item > div > .panel-heading{
 	background-color: #449d44;
   	border-color: #398439;
   	color: #fff;
-  	font-size: 1.5em;
+  	font-size: 1.25em;
 }
 
+/*Main content*/
 .help-item > div > .panel-body,
 .help-item > div > p{
 	font-size: 1em;
@@ -27,12 +40,12 @@
 }
 
 .help-container{
-	font-size: 16px;
+	font-size: 1;
 	line-height: 1.7;
 }
 
 .help-visualisation-interaction{
-	font-size: 24px;
+	font-size: 1.2em;
 	font-weight: bold;
 	text-decoration: underline;
 }

@@ -6,8 +6,8 @@
 		authorData: contains the selected authors full details
 		relouadRoute: is a function located in the controller "MainVizCtrl" that will reload the page
 		viz: contains the parameter for the current visualisation. will be used for redirection
-	algorithms url: 
-		dragging: http://bl.ocks.org/mbostock/4063269
+	algorithms url:
+		visualisation: http://bl.ocks.org/mbostock/4063269
 */
 'use strict';
 
@@ -155,7 +155,7 @@ angular.module('BubblesDirective',[])
 					svg = d3.select(el).append('svg')
 					    .attr('width', diameter + margin.left + margin.right)
 					    .attr('height', diameter + margin.top + margin.bottom)
-					    .attr('transform', 'translate(' + margin.left + ',' + margin.right + ')')
+					    .attr('transform', 'translate(' + margin.left + ',' + 0 + ')')
 					    .attr('class', 'bubble')
 					    .call(tip);
 					//Set up the legend
@@ -209,9 +209,14 @@ angular.module('BubblesDirective',[])
 							d3.select('#legend-bubble').selectAll('tbody').remove();
 							svg.selectAll('*').remove();
 							svg.append('svg:text')
-								.attr('x', 100)
-								.attr('y', diameter/3)
-								.text('No authors with the following constrainst. Please remove or select another.');
+								.attr('x', 0)
+								.attr('y', 50)
+								.style({
+									'fill' : 'red',
+									'font-size': '1.5em',
+									'text-decoration': 'underline'
+								})
+								.text('No co-authors. Please remove filter or select another. Otherwise view Publications');
 						} else {
 							processData(filteredData, function(data){
 								scope.processedData = data;

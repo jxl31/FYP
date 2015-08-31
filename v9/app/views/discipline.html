@@ -1,6 +1,12 @@
 <div class="row">
-	<div ng-if="disciplines.length > 0">
-		<div class="col-md-3" ng-include="'views/disciplines/list.html'" on-></div>
-		<div class="col-md-9" ng-include="'views/disciplines/discipline_box_list.html'"></p></div>
+	<div data-ng-switch="loaded">
+		<div id="loader" data-ng-if="!loaded" class="loading">
+			<img src="images/loading-blue.gif">
+		</div>
+		<div ng-if="disciplines.length > 0">
+			<div class="col-md-3" ng-include="'views/disciplines/list.html'" on-></div>
+			<div class="col-md-9" ng-include="'views/disciplines/discipline_box_list.html'"></p></div>
+		</div>
 	</div>
+	
 </div>

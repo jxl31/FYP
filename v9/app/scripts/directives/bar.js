@@ -5,6 +5,8 @@
 	Scope: 
 		data: contains the selected authors full details
 		viz: contains the parameter for the current visualisation. will be used for redirection
+
+	Algorithms Used: http://www.lynda.com/D3js-tutorials/Data-Visualization-D3js/162449-2.html
 */
 
 'use strict';
@@ -154,9 +156,14 @@ angular.module('BarsDirective',[])
 					if(filteredData.length === 0){
 						svg.selectAll('*').remove();
 						svg.append('svg:text')
-							.attr('x', 100)
-							.attr('y', width/3)
-							.text('No authors with the following constrainst. Please remove or select another.');
+							.attr('x', 0)
+							.attr('y', 50)
+							.style({
+								'fill' : 'red',
+								'font-size': '1.5em',
+								'text-decoration': 'underline'
+							})
+							.text('No co-authors. Please remove filter or select another. Otherwise view Publications');
 					} else {
 						processData(filteredData, function(data){
 							//remove canvas for a clean setup

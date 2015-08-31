@@ -1,9 +1,17 @@
-/* Space out content a bit */
+/*
+  Author: John Xaviery Lucente
+  Project: FYP
+  Import: Google
+*/
+
+/*Body*/
 body {
   background-color: #3A9DD8;
   border-top: 20px;
   padding-bottom: 20px;
 }
+
+
 
 .main {
   border-radius: 5px;
@@ -101,6 +109,11 @@ body {
 }
 
 /* Custom main */
+#loader{
+  margin-left: auto;
+  margin-right: auto; 
+}
+
 .loading{
   z-index: 1000;
   text-align: middle;

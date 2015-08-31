@@ -9,8 +9,8 @@
 'use strict';
 
 angular.module('AuthorBox',[])
-	.directive('authorBox', ['$location','$rootScope','$state',
-		function ($location,$rootScope, $state) {
+	.directive('authorBox', ['$location','$rootScope',
+		function ($location,$rootScope) {
 			return {
 				restrict: 'AE',
 				scope:{

@@ -29,7 +29,7 @@ angular.module('v9App')
     $scope.loaded = false;
     $scope.searchQuery = '';
     //set the sorting rules
-    $scope.filterList = [{label: 'A-Z Firstname', value:'+fname'},
+    $scope.filterList = [{label: 'A-Z First Name', value:'+fname'},
                          {label: 'No. Documents', value:'-count'}];
 
     //detaul visualisation
@@ -41,12 +41,12 @@ angular.module('v9App')
       var promise = AuthorAPI.getAuthors();
       promise.then(function(authors){
         $scope.authors = authors;
+        $scope.loaded = true;
       });
 
       //default filter: no. documents in descending order
       $scope.selectedFilter = $scope.filterList[1];
       $scope.prevFilter = $scope.filterList[1];
-      $scope.loaded = true;
     };
 
     //click event when the name on the list is clicked

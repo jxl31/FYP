@@ -23,9 +23,12 @@ angular.module('CloudDirective',[])
 				loading: '&',
 			},
 			link: function (scope) {
+				//set up scope variables
 				scope.loading({loaded: false});
 				scope.allDates = getDates();
 				scope.selectedDateFilter = null;
+
+				//set up local variables for the dimension of the word cloud
 				var margin = {
 						top: 50,
 						right: 20,
@@ -35,72 +38,67 @@ angular.module('CloudDirective',[])
 					width = $('.cloud-visualisation-container').width(),
 					height = 500;
 
+				//use category20 for the colors
 				var color = d3.scale.category20(),
 					svg;
 			    var el = $('.cloud-visualisation-container')[0];
 
+			    //create the svg
 				svg = d3.select(el).append('svg')
 			    		.attr('width',width + margin.left + margin.right)
 						.attr('height', height + margin.top + margin.bottom)
 					.append('g')
 						.attr('transform', 'translate(' + [width >> 1, height >> 1] + ')');
 
-			    processData(function(words){
-			    	scope.titleDate = getTitleDate(words);
-			    	if(scope.data.processedKeywords === undefined){
-			    		words.forEach(function(d){
-			    			checkWordsForwardSlash(d);
-			    		});
-			    		var promiseK = AuthorAPI.saveKeywords(scope.data.details_id, words);
-				    	promiseK.then(function(msg){
-				    		console.log(msg);
-				    	});
-			    	}
-			    	d3.layout.cloud()
-			    		.size([width, height])
-						.timeInterval(10)
-						.words(words)
-						.padding(1)
-						.font('Impact')
-						.fontSize(function(d) { return d.size; })
-						.rotate(function() { return ~~(Math.random()*5) * -40 + 60;  })
-						.on('end', draw)
-						.start();
+				//function that will be called in the initialisation
+				//and whenever there is a filter selected
+				function updateViz(){
+					//Clear container
+					svg.selectAll('text').remove();
+					svg.selectAll('*').remove();
 
-			    });
-
-			    scope.$watch('titleDate', function(n,o){
-			    	if(n !== o){
-			    		console.log(scope.titleDate);
-			    	}
-			    });
-
-			    function updateViz(){
-			    	var filteredData = filterByDate(scope.selectedDateFilter);
-			    	scope.titleDate = scope.selectedDateFilter;
-			    	console.log(filteredData);
-			    	processData(function(words){
-			    		svg.selectAll('text').remove();
-			    		d3.layout.cloud()
+					var filteredData;
+					//if there is a selected filter then populate
+					//the filteredData variable
+					if(scope.selectedDateFilter !== null){
+						filteredData = filterByDate(scope.selectedDateFilter);
+						scope.titleDate = scope.selectedDateFilter;
+					}
+					processData(function(words){
+						//if filtered data is undefined then that means there is no filter applied
+						//get the to and from date from the publications
+						if(filteredData === undefined){
+							scope.titleDate = getTitleDate(words);
+						}
+						d3.layout.cloud()
 				    		.size([width, height])
 							.timeInterval(10)
 							.words(words)
 							.padding(1)
 							.font('Impact')
 							.fontSize(function(d) { return d.size; })
-							.rotate(function() { return ~~(Math.random()*5) * 30 - 70;  })
+							.rotate(function() { return ~~(Math.random()*5) * 30 - 60;  })
 							.on('end', draw)
 							.start();
+					}, filteredData)
+				}
+			    // if(scope.data.processedKeywords === undefined){
+		    	// 	words.forEach(function(d){
+		    	// 		checkWordsForwardSlash(d);
+		    	// 	});
+		    	// 	var promiseK = AuthorAPI.saveKeywords(scope.data.details_id, words);
+			    // 	promiseK.then(function(msg){
+			    // 		console.log(msg);
+			    // 	});
+		    	// }
 
-			    	}, filteredData);
-
-			    }
-
-
+		    	//draws the visualisation
 			    function draw(words){
+			    	//passing the words into the svg element
+			    	//creating text element with every iteration
 					svg.selectAll('text')
 				        .data(words)
-				      .enter().append('text')
+				      .enter().append('svg:text')
 				        .style('font-size', function(d) { return d.size + 'px'; })
 				        .style('font-family', 'Impact')
 				        .style('fill', function(d, i) { return color(i); })
@@ -111,11 +109,13 @@ angular.module('CloudDirective',[])
 				        .text(function(d) { return d.text; });
 			    }
 
+			    //function will be called whenever the list of dates are selected
 			    scope.toggleDate = function(date){
 			    	scope.selectedDateFilter = date;
 			    	updateViz();
 			    };
 
+			    //get dates from all publications
 			    function getDates (){
 					var dates = [];
 					scope.data.coauthors.forEach(function(author){
@@ -132,6 +132,10 @@ angular.module('CloudDirective',[])
 					return dates;
 				}
 
+				//Gets the title data from the words that was filtered.
+				//If the words are all from a year then that year alone will be displayed
+				//however the keywords of all publications are viewed the title will be 
+				//from the earliest and to the latest dates
 			    function getTitleDate(words){
 			    	var title = '';
 			    	var dates = [];
@@ -161,9 +165,12 @@ angular.module('CloudDirective',[])
 			    }
 
 
+			    //filters the publication with the supplied date
 			    function filterByDate (selectedDate){
 			    	var tempWords = [];
 			    	scope.data.docs.forEach(function(doc){
+			    		//an example of the returned match with the regex
+			    		//['12/2014', '2014'] thats why it selects the second element of the array
 		    			if(doc.publication_date.match('\\d+[/\\-](\\d+)')[1] === selectedDate){
 		    				scope.data.keywords.forEach(function(keywords){
 		    					if(keywords.docTitle === doc.title){
@@ -182,9 +189,15 @@ angular.module('CloudDirective',[])
 		    		return tempWords;
 			    }
 
-
+			    /*
+					Processing of keywords
+			    */
 				function processData(callback, filteredData){
 					var tempWords = [];
+					var max = scope.data.keywords.length > 10 ? 10 : 30; //maximum number of words per publicatoin
+					var wScale = max === 30 ? 45 : 20; //size not too big or too small
+					//if filtered data is not undefined
+					//meaning if the data has been filtered
 					if(filteredData !== undefined){
 						filteredData.forEach(function(word){
 							if(!ifSimilarWords(tempWords, word.text)){
@@ -195,68 +208,65 @@ angular.module('CloudDirective',[])
 								});
 							}
 						});
-					} else if(scope.data.processedKeywords === undefined){
-						var max = scope.data.keywords.length > 10 ? 10 : 30;
-						var wScale = max === 30 ? 45 : 20; 
-						if(scope.indexes === undefined){
-							scope.data.keywords.forEach(function(d){
-								console.log(d.docTitle);
-								if(d.docKeywords !== undefined){
-									var docLength = d.docKeywords.length;
-									for(var i = 0; i < max; i++){
-										if(i < docLength){
-											if(!ifSimilarWords(tempWords, d.docKeywords[i].text)){
-												tempWords.push({
-													text: d.docKeywords[i].text, 
-													size: 5 + d.docKeywords[i].relevance * wScale,
-													from: d.docTitle 
-												});
-											}
-										} else {
-											return;
+					} else if(scope.indexes === undefined){ //if the scope.indexes is not empty
+						//meaning that there are titles that came from the trend graph
+						scope.data.keywords.forEach(function(d){
+							console.log(d.docTitle);
+							if(d.docKeywords !== undefined){
+								var docLength = d.docKeywords.length;
+								for(var i = 0; i < max; i++){
+									if(i < docLength){
+										if(!ifSimilarWords(tempWords, d.docKeywords[i].text)){
+											tempWords.push({
+												text: d.docKeywords[i].text, 
+												size: 5 + d.docKeywords[i].relevance * wScale,
+												from: d.docTitle 
+											});
 										}
+									} else {
+										return;
 									}
 								}
-							});
-						} else {
-							for(var i = 0; i < scope.indexes.length; i++){
-								for(var j = 0; j < scope.data.keywords.length; j++){
-									if(scope.indexes[i] === scope.data.keywords[j].docTitle){
-										if(scope.data.keywords[j].docKeywords !== undefined){
-											var docLength = scope.data.keywords[j].docKeywords.length;
-											for(var x = 0; x < max ; x++){
-												if(x < docLength){
-													//console.log('x:' + x + ', l:' + scope.data.keywords[j].docKeywords.length);
-													if(!ifSimilarWords(tempWords, scope.data.keywords[j].docKeywords[x].text)){
-														tempWords.push({
-															text: scope.data.keywords[j].docKeywords[x].text,
-															size: 5 + scope.data.keywords[j].docKeywords[x].relevance * wScale, 
-															from: scope.data.keywords[j].docTitle
-														});
-													}
-												}else{
-													break;
+							}
+						});
+					} else { //process every publications
+						for(var i = 0; i < scope.indexes.length; i++){
+							for(var j = 0; j < scope.data.keywords.length; j++){
+								if(scope.indexes[i].title === scope.data.keywords[j].docTitle){
+									if(scope.data.keywords[j].docKeywords !== undefined){
+										var docLength = scope.data.keywords[j].docKeywords.length;
+										for(var x = 0; x < max ; x++){
+											if(x < docLength){
+												//console.log('x:' + x + ', l:' + scope.data.keywords[j].docKeywords.length);
+												if(!ifSimilarWords(tempWords, scope.data.keywords[j].docKeywords[x].text)){
+													tempWords.push({
+														text: scope.data.keywords[j].docKeywords[x].text,
+														size: 5 + scope.data.keywords[j].docKeywords[x].relevance * wScale, 
+														from: scope.data.keywords[j].docTitle
+													});
 												}
+											}else{
+												break;
 											}
 										}
 									}
 								}
 							}
 						}
-					} else {
-						tempWords.push(scope.data.processedKeywords);
 					}
-	
+					
 					scope.loading({loaded: true});
+					console.log(tempWords);	
 					callback(tempWords);
 				}
 
-				function checkWordsForwardSlash(word){
-					if(word.text.indexOf('/') !== -1){
-						word.text = word.text.replace('/' , ' or ');
-					}
-				}
+				// function checkWordsForwardSlash(word){
+				// 	if(word.text.indexOf('/') !== -1){
+				// 		word.text = word.text.replace('/' , ' or ');
+				// 	}
+				// }
 
+				//function to call getEditDistance multiple times to check if there is a similar word or not
 				function ifSimilarWords(array, lookupWord){
 					for(var i = 0; i < array.length; i++){
 						if(getEditDistance(lookupWord, array[i].text) <= 1){
@@ -301,6 +311,12 @@ angular.module('CloudDirective',[])
 
 					return matrix[w2.length][w1.length];
 				}
+
+				scope.init = function(){
+					updateViz();
+				}
+
+				scope.init();
 			}
 		};
 	}]);

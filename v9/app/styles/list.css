@@ -1,7 +1,8 @@
 /*
-	Author, Discipline List
+	Author: John Xaviery Lucente
+	Project: FYP
+	Import:	Google
 */
-
 .authors-list,
 .discipline-list,
 .author-box-container,
@@ -58,4 +59,11 @@
 	position: absolute;
 	right: 40px;
 	top: 20px;
+}
+
+/*
+	
+*/
+.active{
+	background-color: #000;
 }

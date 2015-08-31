@@ -10,21 +10,6 @@ var fs = require('fs'),
 var AlchemyAPI = require('alchemyapi');
 
 /*
-	Set up Dictionary needed for the comparison of non names authors in discipline
-*/
-// var dictionary = {};
-
-
-// var rd = readline.createInterface({
-//     input: fs.createReadStream('words.txt'),
-//     output: process.stdout,
-//     terminal: false
-// });
-// rd.on('line', function(line) {
-// 	dictionary[line] = line;
-// });
-
-/*
 	Mongoose Config 
 */
 var options = {
@@ -78,6 +63,9 @@ var authorDetailSchema = mongoose.Schema({
 	collection: 'AuthorDetails'
 });
 
+/*
+	From Author Document
+*/
 
 var authorSchema = mongoose.Schema({
 	_id: String,
@@ -93,6 +81,10 @@ var authorSchema = mongoose.Schema({
 },{
 	collection: 'Authors'
 });
+
+/*
+	From Discipline Document
+*/
 
 var disciplineSchema = mongoose.Schema({
 	_id: String,
@@ -119,10 +111,15 @@ var Authors = mongoose.model('Authors', authorSchema),
 db.on('error', console.error);
 db.once('open', function (callback) {
 	console.log('Connected to mongodb!');
+	//The setinterval function will execute the following function in the given interval time
+	//the cleanLoadAuthors will clear both the Authors and AuthorDetails Schema and scrape the authors list again
+	//the cleanLoadDiscipline will clear the Disciplines schema and load the discipline again
 	//setInterval(cleanLoadAuthors(Authors), dbUpdateInterval);
 	//setInterval(cleanLoadDiscpline(Disciplines), dbUpdateInterval);
 
 	router.use(function(req, res, next) {
+		res.header("Access-Control-Allow-Origin", "*");
+  		res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 		next(); // make sure we go to the next routes and don't stop here
 	});
 
@@ -138,13 +135,16 @@ db.once('open', function (callback) {
 	//ROUTE: Get Author from discipline
 	router.route('/author/:fullname/:url').get(function(req,res){
 		var fullname = decodeURIComponent(req.params.fullname);
+		console.log(fullname);
 		var url = decodeURIComponent(req.params.url);
-		for(var i = 0 ; i < 3; i++){
+		for(var i = 0 ; i < 5; i++){
 			url = decodeURIComponent(url);
 		}
-		Authors.findOne({fname:req.params.fullname}, function(err,author){
+		Authors.findOne({fullname:fullname}, function(err,author){
 			if(err) res.json(err);
-			if(author === null){
+			if(author === null){ 
+				//needs to check if author is null because authors from discipline contains authors
+				// that are not in the author's list
 				getAuthorThroughDiscipline(fullname, url, function(data){
 					if(!data.corp){
 						console.log('New Author');
@@ -157,7 +157,28 @@ db.once('open', function (callback) {
 					
 				});
 			} else {
-				res.json(author);
+				if(author.detail_id !== undefined){ //if there is already the scraped data then send that
+					AuthorDetails.findOne({_id: author.detail_id}, function(err,data){
+						if(err) res.json(err);
+						//data is stored in the _doc key and values are what is returned from the query
+						//just need to return the details because id is in the details as well.
+						else {
+							res.json(data._doc.details);
+						}
+					});
+				} else { //else get the details of the author
+					getAuthorThroughDiscipline(fullname, url, function(data){
+						if(!data.corp){
+							console.log('New Author');
+							persistAndSendAuthorDetails(res, data.fname, data.lname, data.key, fullname, data.corp);					
+						} else {
+							console.log('New Corp Author');
+							persistAndSendCorpAuthorDetails(res, data.fullname, data.key, data.corp);
+						}
+
+						
+					});
+				}
 			}
 		});
 	});
@@ -166,8 +187,12 @@ db.once('open', function (callback) {
 	router.route('/author/:fname/:lname/:key').get(function(req,res){
 		console.log(req.params.fname);
 		console.log(req.params.lname);
+		//finds the author with first and last names
 		Authors.findOne({fname:req.params.fname, lname: req.params.lname}, function(err,primary){
-			if(err) res.json(err);
+			if(err){ 
+				res.json(err); 
+			} 
+			//if it cant find the author then create a new one
 			if(primary === null){
 				console.log('New Author');
 				persistAndSendAuthorDetails(res, req.params.fname, req.params.lname, req.params.key);
@@ -191,17 +216,19 @@ db.once('open', function (callback) {
 			}
 		});
 	});
-
-	router.route('/author/:details_id/:keywords').put(function(req,res){
-		var d_id =  req.params.details_id;
-		var p_keywords = req.params.keywords;
-		AuthorDetails.update({_id: d_id},{processedKeywords: p_keywords}, function(err,data){
-			if(err) res.json(err);
-			else{
-				return res.json('Update Success');
-			}
-		});
-	});
+	
+	// because processing the keywords takes a long time
+	// it might be a good idea to store the processed keywords in the database
+	// router.route('/author/:details_id/:keywords').put(function(req,res){
+	// 	var d_id =  req.params.details_id;
+	// 	var p_keywords = req.params.keywords;
+	// 	AuthorDetails.update({_id: d_id},{processedKeywords: p_keywords}, function(err,data){
+	// 		if(err) res.json(err);
+	// 		else{
+	// 			return res.json('Update Success');
+	// 		}
+	// 	});
+	// });
 
 	//ROUTE: Get all disciplines
 	router.route('/disciplines').get(function(req,res){
@@ -225,11 +252,16 @@ db.once('open', function (callback) {
 **************************/
 function getAuthorThroughDiscipline(fullname, url, callback){
 	getFirstLink(url, function(link){
-		extractFnameAndLastName(link, function(oAuthor){
+		extractFnameAndLastName(link, fullname, function(oAuthor){
 			callback(oAuthor);
 		})
 	});
 }
+
+/*
+	Gets the first link that shows up when the author is clicked
+	Through the discipline
+*/
 
 function getFirstLink(url, callback){
 	var fullURL = URL_ARROW + url;
@@ -246,42 +278,55 @@ function getFirstLink(url, callback){
 	});
 }
 
-function extractFnameAndLastName(link, callback){
+/*
+	Extracts the first and last name from URL_AUTHOR that is visible in the publication page
+*/
+function extractFnameAndLastName(link, fullname, callback){
 	sjs.StaticScraper
 	.create(link)
 	.scrape(function($){
 		var obj = {};
-		var p = $('p[class=author]').children('a:not([rel="nofollow"])')
-		var a = $(p);
-		var link = a.attr('href');
-		if(link.match(regex_corp)){
-			obj = {
-				fullname: decodeURIComponent(link.match(regex_corp)[1]),
-				key: link.match(regex_key)[2],
-				corp: true
+		$('p[class=author]').children('a:not([rel="nofollow"])').each(function(i,element){
+			var a = $(element);
+			var name = a.children('strong').text();
+			var link = a.attr('href');
+			//the corp is for authors present in discipline that are not a persons name
+			//for example "Future Academy"
+			if(link.match(regex_corp)){
+				obj = {
+					fullname: decodeURIComponent(link.match(regex_corp)[1]),
+					key: link.match(regex_key)[2],
+					corp: true
+				}
+			} else if(name.match(fullname)){
+				var fname = decodeURIComponent(link.match(regex_fname)[1]);
+				var lname = decodeURIComponent(link.match(regex_lname)[1]);
+				var key = link.match(regex_key);
+				obj = {
+					fname: fname,
+					lname: lname,
+					key: key[2],
+					link: link,
+					corp: false
+				}
 			}
-		} else {
-			var fname = decodeURIComponent(link.match(regex_fname)[1]);
-			var lname = decodeURIComponent(link.match(regex_lname)[1]);
-			var key = link.match(regex_key);
-			obj = {
-				fname: fname,
-				lname: lname,
-				key: key[2],
-				link: link,
-				corp: false
-			}
-		}
+		})
 
 		return obj;
 	}, function(data){
+		//returns to getAuthorThroughDiscipline function
 		callback(data);
 	});
 }
 
+/*
+	Function that will send and save details of a Corporate author present in Disciplines list
+	Corporate authors are authors that are not persons name e.g. "Future Academy"
+*/
 function persistAndSendCorpAuthorDetails(res, fullname, key, corp){
 	//var sGeneralURL = 'http://arrow.dit.ie/do/search/results/json?q=corporate_author%3A%22fullname%22&query=Search&start=0&context=corpKey&facet=&facet=&facet=&facet=&facet=&facet=';
 
+	//creates the url using the fullname and key of the corporate author
 	var sCorpURL = URL_CORP.replace('fullname',fullname).replace('corpKey',key);
 	var selectedCorp = encodeURIComponent(fullname);
 	var decodedCorp = decodeURIComponent(fullname);
@@ -316,7 +361,9 @@ function persistAndSendCorpAuthorDetails(res, fullname, key, corp){
 					console.log('Corp created.');
 				});
 			} else {
-				Authors.update({_id: author._id}, { detail_id: details._id }, function(err,updated){
+				//after successfully extracting the corp author details
+				//update its record in the Authors to have the details_id and fullname
+				Authors.update({_id: author._id}, { detail_id: details._id , fullname: decodedCorp},{multi:true}, function(err,updated){
 					console.log('Records Update: ' + updated);
 				});
 			}
@@ -327,13 +374,18 @@ function persistAndSendCorpAuthorDetails(res, fullname, key, corp){
 	});
 }
 
+/*
+	Function that will extract the details of the author that has a proper name
+*/
 function persistAndSendAuthorDetails(res,fname,lname, key, fullname, corp, url){
 	var resJSON;
 	var start = 0;
 	var skip = 25;
+	//replaces the first, last name and author key in the URL that arrow uses
 	var sAuthorURI = URL_AUTHOR.replace('firstname', fname).replace('lastname', lname).replace('authorKey', key);
 	var selectedAuthor = fname + ' ' + lname;
 	getAuthorData(sAuthorURI, start, skip, selectedAuthor, getAuthorData, resJSON , function(data){
+		//modify the data and add details such as fname and lname and fullname and details id
 		data['fname'] = fname;
 		data['lname'] = lname;
 		data['corp'] = corp;
@@ -341,11 +393,12 @@ function persistAndSendAuthorDetails(res,fname,lname, key, fullname, corp, url){
 			data['fullname'] = fullname;
 		}
 		var new_id = mongoose.Types.ObjectId();
-		data['details_id'] = new_id;
+		data['detail_id'] = new_id;
 		var details = {
 			_id: new_id,
 			details: data
 		};
+		//create the details in AuthorDetails
 		AuthorDetails.create(details, function(err,savedData){
 			if(err) console.log(err);
 			else console.log('Details ID: ' + savedData._id);
@@ -361,20 +414,33 @@ function persistAndSendAuthorDetails(res,fname,lname, key, fullname, corp, url){
 					key: key,
 					count: data.num_found,
 					corp: corp,
+					fullname: fullname,
 					detail_id: new_id
 				},function(err,data){
 					console.log('Author created.');
 				});
 			} else {
-				Authors.update({_id: author._id}, { detail_id: details._id }, function(err,updated){
-					console.log('Records Update: ' + updated);
-				});
+				if(fullname !== undefined){
+					Authors.update({_id: author._id}, { detail_id: new_id , fullname: fullname} ,
+						function(err,updated){
+							if(err) console.log(err);
+							console.log('Records Update: ' + updated);
+						});
+				} else {
+					Authors.update({_id: author._id}, { detail_id: new_id } ,
+						function(err,updated){
+							if(err) console.log(err);
+							console.log('Records Update: ' + updated);
+						});
+				}
+				
 			}
 		});
 		res.json(data);
 	});
 }
 
+//Gets the JSON for the corp author using the url provided
 function getCorpData(url, selectedCorp, callback){
 	request({
 			uri: url,
@@ -393,7 +459,7 @@ function getCorpData(url, selectedCorp, callback){
 		});
 }
 
-
+//Gets the author data
 function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCall){
 	var sStart = 'start=';
 	var startingPosition = URL.match(regex_start);
@@ -409,6 +475,7 @@ function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCa
 			var raw = JSON.parse(body);
 			raw['corp'] = false;
 			if(start === 0){
+				//if there is more than 25 documents then extract the rest
 				if(raw.num_found > skip){
 					//callback called here
 					callback(URL, start+skip, skip, selectedAuthor, callback, raw, finalCall);
@@ -419,14 +486,15 @@ function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCa
 					});
 				}
 
-			} else {
+			} else { //the second iteration of extract more details will go here
 				raw.docs.forEach(function(doc){
 					data.docs.push(doc);
 				});
+				//if there is more than 50 documents then extract more
 				if(start+skip < raw.num_found){
 					console.log('More Doc to transfer');
 					callback(URL, start+skip, skip, selectedAuthor, callback, data, finalCall);
-				} else{
+				} else{ //else format the body and call the final callback that will send the details back to client
 					formatBody(data, selectedAuthor, function(formattedData){
 						finalCall(formattedData);
 					});
@@ -437,7 +505,7 @@ function getAuthorData(URL, start, skip, selectedAuthor, callback, data, finalCa
 }
 
 /**
-	Increments co-authors and also add authorName to the returned json
+	Uses the publications and will extract the universities and coauthors
 */
 function formatBody(raw, selectedAuthor, callback){
 	var temp = raw;
@@ -450,7 +518,7 @@ function formatBody(raw, selectedAuthor, callback){
 }
 
 /**
-	Function that calls extractUniversity() multiple times for each link that is found
+	Function that calls extractUniversity() multiple times for each publication that is found
 */
 
 function extractUniversities(mainJSON, selectedAuthor, callback){
@@ -461,6 +529,7 @@ function extractUniversities(mainJSON, selectedAuthor, callback){
 		extractUniversity(doc.url,mainJSON['corp'], function(result){
 			index++;
 			var date = doc['publication_date'].match(regex_date)[1];
+			//adds co-authors everytime it extracts the details from the publication link
 			insertCoAuthorUni(mainJSON, date, coAuthors,selectedAuthor, result, function(){
 			});
 			if(index === mainJSON.docs.length){
@@ -473,7 +542,8 @@ function extractUniversities(mainJSON, selectedAuthor, callback){
 
 /**
 	Scrapes the university for each author which is used for disambiguating
-	authors from each other.
+	authors from each other. The function also extracts the authors contained
+	in the publication.
 */
 
 function extractUniversity(url, corp,callback){
@@ -481,10 +551,13 @@ function extractUniversity(url, corp,callback){
 	sjs.StaticScraper
 	.create(url)
 	.scrape(function($){
+		//selector that points to the individual author and their university
 		$('p[class=author]').children('a:not([rel="nofollow"])').each(function(i,element){
 			var a = $(element);
 			var name = a.children('strong').text();
 			var link = a.attr('href');
+			//if its not a corp author
+			//this needs to be checked here because sometimes authors collaborate with corp authors
 			if(!corp){
 				//university
 				var uni = a.children('em').text();
@@ -507,15 +580,15 @@ function extractUniversity(url, corp,callback){
 
 		return temp;
 	}, function(data){
+		//returns data to extractUniversities()
 		callback(data);
 	});
 }
 
-/**
-	Cleanly replaces the coauthors array by substituting it by the 
-	firstname and lastname of each authors url.
-*/
 
+/*
+	Calls incrementCount multiple times with the given co-author
+*/
 function insertCoAuthorUni(mainJSON, publication_date,coAuthors, selectedAuthor, tempArray, callback){
 	tempArray.forEach(function(author){
 		incrementCount(author, publication_date, coAuthors, selectedAuthor, mainJSON['corp']);
@@ -656,12 +729,13 @@ function cleanLoadAuthors(model){
 							var sLastName = decodeURIComponent(sLink.match(regex_lname)[1]);
 							var sKey = sLink.match(regex_key);
 							var doc_count = sLabel.match(regex_doc_count)[1];
+							var sFullname = '';
 				 			if(sLabel.match(regex_thesis)){
 				 				//if(array[array.length - 1].fname !== sFirstName && array[array.length - 1].lname !== sLastName){
-				 				temp.push({ _id: mongoose.Types.ObjectId(),fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], count: doc_count, thesis: true});
+				 				temp.push({ _id: mongoose.Types.ObjectId(), fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], count: doc_count, thesis: true, fullname: sFullname});
 				 				//}
 				 			} else{
-				 				temp.push({ _id: mongoose.Types.ObjectId(),fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], count: doc_count, thesis: false});
+				 				temp.push({ _id: mongoose.Types.ObjectId(),fname: sFirstName, lname: sLastName, link: sLink, key: sKey[2], count: doc_count, thesis: false, fullname: sFullname});
 				 			}
 				 		}
 					})
@@ -677,11 +751,14 @@ function cleanLoadAuthors(model){
 				curr = data[i];
 				if(i === 0) real.push(curr);
 				else{
+					//if there is no (thesis) on the name
 					if(curr.thesis === false) real.push(curr);
 					else if(curr.thesis === true){
 						if(i === data.length-1){
 							real.push(curr);
 						} else{
+							//check if current author's first and last name are the same with the next author and if it doesnt
+							//contain (thesis) then add.
 							if(curr.fname === data[i+1].fname && curr.lname === data[i+1].lname && data[i+1].thesis === false){
 								data[i+1].lname.replace('')
 								real.push(data[i+1]);
@@ -756,6 +833,9 @@ function doDisciplineScraping(scrapedDisciplines){
 	});
 }
 
+/*
+	Scrapes the discipline in the provided URL
+*/
 function scrapeDisciplines(url, callback, sub){
 	console.log(url);
 	sjs.StaticScraper
@@ -798,6 +878,9 @@ function scrapeDisciplines(url, callback, sub){
 	});
 }
 
+/*
+	Scrapes the list of authors from the discipline
+*/
 function scrapeAuthorsDiscipline(discipline, callback){
 	var authorsURL = URL_ARROW + discipline.disciplineAuthorsURL;
 	sjs.StaticScraper

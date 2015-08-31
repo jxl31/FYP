@@ -24,8 +24,11 @@ angular.module('v9App')
         $(button).toggleClass('active');
       }
   	});
+
+    $scope.loaded = false;
   	$scope.disciplines = [];
     $scope.seletedDiscipline;
+    $scope.searchQuery = ''; 
     //set up sorting variables
     $scope.filterList = [{label: 'A-Z Firstname', value:'+fname'},
                          {label: 'No. Documents', value:'-count'}];
@@ -39,6 +42,7 @@ angular.module('v9App')
   		var promise = DisciplineAPI.getDisciplines();
   		promise.then(function(data){
   			$scope.disciplines = data;
+        $scope.loaded = true;
   		});
       $scope.selectedFilter = $scope.filterList[1];
       $scope.prevFilter = $scope.filterList[1];

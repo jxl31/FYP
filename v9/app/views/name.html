@@ -1,11 +1,9 @@
 <div class="row">
-	<div ng-switch="loaded">
-		<div id="loader" data-ng-if="!loaded" class="loading">
-			<img src="images/loading-blue.gif">
-		</div>
-		<div>
-			<div class="col-md-3" ng-include="'views/authors/list.html'"></div>
-			<div class="col-md-9 author-box-container-1" ng-include="'views/authors/author_box_list.html'"></div>
-		</div>
+	<div id="loader" data-ng-if="!loaded" class="loading">
+		<img src="images/loading-blue.gif">
+	</div>
+	<div data-ng-if="loaded">
+		<div class="col-md-3" ng-include="'views/authors/list.html'"></div>
+		<div class="col-md-9 author-box-container-1" ng-include="'views/authors/author_box_list.html'"></div>
 	</div>
 </div>

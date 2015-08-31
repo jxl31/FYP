@@ -1,5 +1,5 @@
 <div>
-	<input type="text" class="form-control search-bar" placeholder="Search Discipline Name" data-ng-model="query.discipline" data-ng-change="filterQuery(query.discipline)"/>
+	<input type="text" class="form-control search-bar" placeholder="Search Discipline Name" data-ng-model="query.discipline"/>
     <ul class="list-group discipline-list">
     	<div class="list-group-item" data-ng-repeat="discipline in disciplines | filter: query | orderBy: 'discipline'">
 			<button data-ng-if="discipline.authors.length > 0" class="btn btn-default btn-list-item btn-discipline-list-item" data-ng-class="{first:$first}" data-ng-click="setDiscipline(discipline)">

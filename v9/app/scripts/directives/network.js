@@ -6,6 +6,9 @@
 		data: contains the selected authors full details
 		relouadRoute: is a function located in the controller "MainVizCtrl" that will reload the page
 		viz: contains the parameter for the current visualisation. will be used for redirection
+
+	Algorithm Reference:
+		- dragging: http://bl.ocks.org/mbostock/4557698
 */
 
 'use strict';
@@ -220,9 +223,14 @@ angular.module('NetworkDirective',[])
 						d3.select('#legend-network').selectAll('tbody').remove();
 						svg.selectAll('g').remove();
 						svg.append('svg:text')
-							.attr('x', 100)
-							.attr('y', width/3)
-							.text('No authors with the following constrainst. Please remove or select another.');
+							.attr('x', 0)
+							.attr('y', 50)
+							.style({
+								'fill' : 'red',
+								'font-size': '1.5em',
+								'text-decoration': 'underline'
+							})
+							.text('No co-authors. Please remove filter or select another. Otherwise view Publications');
 					} else {
 						processData(filteredData, function(fNodes, fLinks){
 							console.log(fNodes);
@@ -289,7 +297,10 @@ angular.module('NetworkDirective',[])
 
 							//create the text
 							nodeEnter.append('svg:text')
-								.text(function(d) {
+								.text(function(d, i) {
+										if(i === 0){
+											return d.name;
+										}
 										return d.name.substring(0, 20 / 2);
 									})
 								.attr('class', function(d,i){

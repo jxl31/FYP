@@ -1,5 +1,9 @@
 <div>
-	<h1> {{selectedDiscipline.discipline}} </h1>
+	<div data-ng-if="selectedDiscipline !== undefined">
+		<h1> {{selectedDiscipline.discipline}} </h1>
+		<input type="text" class="form-control search-bar" placeholder="search name" data-ng-model="query1" data-ng-change="filterQuery(query1)">
+	</div>
+	
 	<div class="discipline-box-container">
 		<div data-ng-if="selectedDiscipline === undefined">
 			Please select a discipline
@@ -16,7 +20,7 @@
 			    </ul>
 			</div>
 			
-			<author-box data-ng-repeat="author in selectedDiscipline.authors | orderBy: selectedFilter.value" data="author" >
+			<author-box data-ng-repeat="author in selectedDiscipline.authors | filter: searchQuery |orderBy: selectedFilter.value" data="author" >
 			</author-box>
 		</div>
 	</div>	
